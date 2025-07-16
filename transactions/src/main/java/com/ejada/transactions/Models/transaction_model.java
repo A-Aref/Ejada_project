@@ -29,7 +29,7 @@ public class transaction_model {
     private UUID to_account_id;
     @Column(name = "amount")
     private Double amount;
-    @Column(name = "description")
+    @Column(name = "description", nullable = true)
     private String description;
     @Column(name = "status")
     private Status status = Status.INITIATED;
