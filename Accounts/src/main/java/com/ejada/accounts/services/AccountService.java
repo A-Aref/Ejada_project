@@ -1,4 +1,4 @@
-package com.ejada.accounts.services;
+package com.ejada.accounts.Services;
 
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -9,10 +9,10 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.ejada.accounts.Models.AccountModel;
+import com.ejada.accounts.Models.AccountStatus;
+import com.ejada.accounts.Models.AccountType;
 import com.ejada.accounts.Repos.AccountRepo;
-import com.ejada.accounts.models.AccountStatus;
-import com.ejada.accounts.models.AccountType;
-import com.ejada.accounts.models.AccountModel;
 
 @Service
 public class AccountService {
@@ -27,8 +27,8 @@ public class AccountService {
             return null;
         }
         AccountModel account = new AccountModel();
-        account.setUser_id((UUID) accountData.get("userId"));
-        account.setAccount_type(accountType);
+        account.setUserId((UUID) accountData.get("userId"));
+        account.setAccountType(accountType);
         account.setBalance(initialBalance);
         return accountRepo.save(account);
     }
@@ -38,7 +38,7 @@ public class AccountService {
     }
 
     public List<AccountModel> getAllAccounts(UUID userId) {
-        return accountRepo.findByUser_id(userId);
+        return accountRepo.findByUserId(userId);
     }
 
     public void getAmount(UUID accountId) {
@@ -60,8 +60,8 @@ public class AccountService {
             if(fromAccount.getBalance() >= amount) {
                 fromAccount.setBalance(fromAccount.getBalance() - amount);
                 toAccount.setBalance(toAccount.getBalance() + amount);
-                fromAccount.setUpdate_at(Timestamp.from(Instant.now()));
-                toAccount.setUpdate_at(Timestamp.from(Instant.now()));
+                fromAccount.setUpdatedAt(Timestamp.from(Instant.now()));
+                toAccount.setUpdatedAt(Timestamp.from(Instant.now()));
                 accountRepo.save(fromAccount);
                 accountRepo.save(toAccount);
             } else {

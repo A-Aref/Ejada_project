@@ -1,5 +1,5 @@
 
-package com.ejada.accounts.models;
+package com.ejada.accounts.Models;
 
 public enum AccountStatus {
     ACTIVE,

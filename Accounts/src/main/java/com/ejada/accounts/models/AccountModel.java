@@ -1,4 +1,4 @@
-package com.ejada.accounts.models;
+package com.ejada.accounts.Models;
 
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -28,19 +28,19 @@ public class AccountModel {
     @Column(name = "id")
     private UUID id;
     @Column(name = "user_id")
-    private UUID user_id;
+    private UUID userId;
     @Column(name = "account_number", unique = true)
-    private String account_number;
+    private String accountNumber;
     @Column(name = "account_type")
-    private AccountType account_type;
+    private AccountType accountType;
     @Column(name = "balance")
     private Double balance = 0.00;
     @Column(name = "status")
     private AccountStatus status = AccountStatus.ACTIVE;
     @Column(name = "created_at")
-     private Timestamp created_at = Timestamp.from(Instant.now());
+     private Timestamp createdAt = Timestamp.from(Instant.now());
     @Column(name = "updated_at")
-    private Timestamp update_at = Timestamp.from(Instant.now());
+    private Timestamp updatedAt = Timestamp.from(Instant.now());
 
 
 }

@@ -59,7 +59,7 @@ public class TransactionController {
                     {
                         put("transactionId", transaction.getId());
                         put("status", transaction.getStatus().getString());
-                        put("timestamp", transaction.getCreated_at().toString());
+                        put("timestamp", transaction.getCreatedAt().toString());
                     }
                 });
     }
@@ -81,7 +81,7 @@ public class TransactionController {
                     {
                         put("transactionId", transaction.getId());
                         put("status", transaction.getStatus().getString());
-                        put("timestamp", transaction.getCreated_at().toString());
+                        put("timestamp", transaction.getCreatedAt().toString());
                     }
                 });
     }

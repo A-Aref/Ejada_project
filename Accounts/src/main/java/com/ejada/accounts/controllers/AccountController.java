@@ -1,4 +1,4 @@
-package com.ejada.accounts.controllers;
+package com.ejada.accounts.Controllers;
 
 import java.util.HashMap;
 import java.util.List;
@@ -8,8 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.ejada.accounts.models.AccountModel;
-import com.ejada.accounts.services.AccountService;
+import com.ejada.accounts.Services.AccountService;
+import com.ejada.accounts.Models.AccountModel;
 
 @RestController
 @RequestMapping("/accounts")
@@ -33,7 +33,7 @@ public class AccountController {
                 new HashMap<String, Object>() {
                     {
                         put("accountId", account.getId());
-                        put("accountNumber", account.getAccount_number());
+                        put("accountNumber", account.getAccountNumber());
                         put("message", "Account created successfully");
                     }
                 });
@@ -54,9 +54,9 @@ public class AccountController {
                 new HashMap<String, Object>() {
                     {
                         put("accountId", account.getId());
-                        put("accountNumber", account.getAccount_number());
+                        put("accountNumber", account.getAccountNumber());
                         put("balance", account.getBalance());
-                        put("accountType", account.getAccount_type().getString());
+                        put("accountType", account.getAccountType().getString());
                         put("status", account.getStatus().getString());
                     }
                 });
@@ -76,9 +76,9 @@ public class AccountController {
         List<HashMap<String, Object>> accountList = accounts.stream().map(account -> {
             HashMap<String, Object> accountData = new HashMap<>();
             accountData.put("accountId", account.getId());
-            accountData.put("accountNumber", account.getAccount_number());
+            accountData.put("accountNumber", account.getAccountNumber());
             accountData.put("balance", account.getBalance());
-            accountData.put("accountType", account.getAccount_type().getString());
+            accountData.put("accountType", account.getAccountType().getString());
             accountData.put("status", account.getStatus().getString());
             return accountData;
         }).toList();

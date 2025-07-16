@@ -10,13 +10,17 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
 @Table(name = "transactions")
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class TransactionModel {
 
     @Id
@@ -24,9 +28,9 @@ public class TransactionModel {
     @Column(name = "id")
     private UUID id;
     @Column(name = "from_account_id")
-    private UUID from_account_id;
+    private UUID fromAccountId;
     @Column(name = "to_account_id")
-    private UUID to_account_id;
+    private UUID toAccountId;
     @Column(name = "amount")
     private Double amount;
     @Column(name = "description", nullable = true)
@@ -34,6 +38,6 @@ public class TransactionModel {
     @Column(name = "status")
     private TransactionStatus status = TransactionStatus.INITIATED;
     @Column(name = "created_at")
-    private Timestamp created_at = Timestamp.from(Instant.now());
+    private Timestamp createdAt = Timestamp.from(Instant.now());
 
 }

@@ -27,15 +27,15 @@ public class TransactionService {
         List<HashMap<String, Object>> result = transactions.stream().map(transaction -> {
             
             final String desc = transaction.getDescription() != null ? transaction.getDescription() : "";
-            UUID account = transaction.getFrom_account_id() != accountId ? transaction.getFrom_account_id() : transaction.getTo_account_id();
-            Double amount = transaction.getFrom_account_id() != accountId ? -transaction.getAmount() : transaction.getAmount();
+            UUID account = transaction.getFromAccountId() != accountId ? transaction.getFromAccountId() : transaction.getToAccountId();
+            Double amount = transaction.getFromAccountId() != accountId ? -transaction.getAmount() : transaction.getAmount();
             
             HashMap<String, Object> map = new HashMap<>();
             map.put("transactionId", transaction.getId());
             map.put("accountId", account);
             map.put("amount", amount);
             map.put("description", desc);
-            map.put("timestamp", transaction.getCreated_at().toString());
+            map.put("timestamp", transaction.getCreatedAt().toString());
             return map;
         }).toList();
         return result;
@@ -47,8 +47,8 @@ public class TransactionService {
             return null;
         }
         TransactionModel newTransaction = new TransactionModel();
-        newTransaction.setFrom_account_id(UUID.fromString((String) transaction.get("fromAccountId")));
-        newTransaction.setTo_account_id(UUID.fromString((String) transaction.get("toAccountId")));
+        newTransaction.setFromAccountId(UUID.fromString((String) transaction.get("fromAccountId")));
+        newTransaction.setToAccountId(UUID.fromString((String) transaction.get("toAccountId")));
         newTransaction.setAmount(Double.parseDouble((String) transaction.get("amount")));
         newTransaction.setStatus(TransactionStatus.INITIATED);
         if (transaction.containsKey("description")) {
