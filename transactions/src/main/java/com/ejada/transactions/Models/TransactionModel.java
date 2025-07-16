@@ -17,7 +17,7 @@ import lombok.Setter;
 @Table(name = "transactions")
 @Getter
 @Setter
-public class transaction_model {
+public class TransactionModel {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,7 +32,7 @@ public class transaction_model {
     @Column(name = "description", nullable = true)
     private String description;
     @Column(name = "status")
-    private Status status = Status.INITIATED;
+    private TransactionStatus status = TransactionStatus.INITIATED;
     @Column(name = "created_at")
     private Timestamp created_at = Timestamp.from(Instant.now());
 
