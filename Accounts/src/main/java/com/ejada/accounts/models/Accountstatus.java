@@ -1,15 +1,16 @@
+
 package com.ejada.accounts.models;
 
-public enum Accountstatus {
+public enum AccountStatus {
     ACTIVE,
     INACTIVE;
 
-    public String getStatus() {
+    public String getString() {
         return this.name();
     }
 
-    public static Accountstatus fromString(String status) {
-        for (Accountstatus accountStatus : Accountstatus.values()) {
+    public static AccountStatus fromString(String status) {
+        for (AccountStatus accountStatus : AccountStatus.values()) {
             if (accountStatus.name().equalsIgnoreCase(status)) {
                 return accountStatus;
             }
@@ -17,3 +18,4 @@ public enum Accountstatus {
         return null;
     }
 }
+

@@ -21,7 +21,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class account_model {
+public class AccountModel {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,11 +32,11 @@ public class account_model {
     @Column(name = "account_number", unique = true)
     private String account_number;
     @Column(name = "account_type")
-    private Accounttype account_type;
+    private AccountType account_type;
     @Column(name = "balance")
     private Double balance = 0.00;
     @Column(name = "status")
-    private Accountstatus status = Accountstatus.ACTIVE;
+    private AccountStatus status = AccountStatus.ACTIVE;
     @Column(name = "created_at")
      private Timestamp created_at = Timestamp.from(Instant.now());
     @Column(name = "updated_at")

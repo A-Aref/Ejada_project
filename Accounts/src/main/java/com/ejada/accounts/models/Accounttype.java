@@ -1,15 +1,15 @@
 package com.ejada.accounts.models;
 
-public enum Accounttype {
+public enum AccountType {
     SAVINGS,
     CHECKING;
 
-    public String getType() {
+    public String getString() {
         return this.name();
     }
 
-    public static Accounttype fromString(String type) {
-        for (Accounttype accountType : Accounttype.values()) {
+    public static AccountType fromString(String type) {
+        for (AccountType accountType : AccountType.values()) {
             if (accountType.name().equalsIgnoreCase(type)) {
                 return accountType;
             }

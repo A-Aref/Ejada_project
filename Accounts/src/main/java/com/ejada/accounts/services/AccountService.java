@@ -9,35 +9,35 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.ejada.accounts.Repos.account_repo;
-import com.ejada.accounts.models.Accountstatus;
-import com.ejada.accounts.models.Accounttype;
-import com.ejada.accounts.models.account_model;
+import com.ejada.accounts.Repos.AccountRepo;
+import com.ejada.accounts.models.AccountStatus;
+import com.ejada.accounts.models.AccountType;
+import com.ejada.accounts.models.AccountModel;
 
 @Service
-public class account_service {
+public class AccountService {
 
     @Autowired
-    private account_repo accountRepo;
+    private AccountRepo accountRepo;
 
-    public account_model create_account(HashMap<String, Object> accountData) {
-        Accounttype accountType = Accounttype.fromString((String) accountData.get("accountType"));
+    public AccountModel createAccount(HashMap<String, Object> accountData) {
+        AccountType accountType = AccountType.fromString((String) accountData.get("accountType"));
         Double initialBalance = (Double) accountData.get("initialBalance");
         if(initialBalance < 0 || accountType == null) {
             return null;
         }
-        account_model account = new account_model();
+        AccountModel account = new AccountModel();
         account.setUser_id((UUID) accountData.get("userId"));
         account.setAccount_type(accountType);
         account.setBalance(initialBalance);
         return accountRepo.save(account);
     }
 
-    public account_model get_account(UUID accountId) {
+    public AccountModel getAccount(UUID accountId) {
         return accountRepo.findById(accountId).orElse(null);
     }
 
-    public List<account_model> get_all_accounts(UUID userId) {
+    public List<AccountModel> getAllAccounts(UUID userId) {
         return accountRepo.findByUser_id(userId);
     }
 
@@ -45,16 +45,16 @@ public class account_service {
         accountRepo.deleteById(accountId);
     }
 
-    public void set_inactive(UUID accountId) {
-        account_model account = accountRepo.findById(accountId).orElse(null);
+    public void setInactive(UUID accountId) {
+        AccountModel account = accountRepo.findById(accountId).orElse(null);
         if (account != null) {
-            account.setStatus(Accountstatus.INACTIVE);
+            account.setStatus(AccountStatus.INACTIVE);
         }
     }
 
-    public void update_amount(UUID fromAccountId,UUID toAccountId, Double amount) {
-        account_model toAccount = accountRepo.findById(fromAccountId).orElse(null);
-        account_model fromAccount = accountRepo.findById(toAccountId).orElse(null);
+    public void updateAmount(UUID fromAccountId,UUID toAccountId, Double amount) {
+        AccountModel toAccount = accountRepo.findById(fromAccountId).orElse(null);
+        AccountModel fromAccount = accountRepo.findById(toAccountId).orElse(null);
 
         if (toAccount != null && fromAccount != null) {
             if(fromAccount.getBalance() >= amount) {
