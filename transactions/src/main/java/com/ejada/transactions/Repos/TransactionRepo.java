@@ -11,6 +11,6 @@ import com.ejada.transactions.Models.TransactionModel;
 @Repository
 public interface TransactionRepo extends JpaRepository<TransactionModel, UUID> {
 
-    public List<TransactionModel> findByFrom_account_id(UUID fromAccountId);
-    public List<TransactionModel> findByTo_account_id(UUID toAccountId);
+    public List<TransactionModel> findByFromAccountId(UUID fromAccountId);
+    public List<TransactionModel> findByToAccountId(UUID toAccountId);
 }

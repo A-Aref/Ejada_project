@@ -20,8 +20,8 @@ public class TransactionService {
 
     public List<HashMap<String,Object>> getTransactions(UUID accountId) {
 
-        List<TransactionModel> transactions = transactionRepo.findByFrom_account_id(accountId);
-        transactions.addAll(transactionRepo.findByTo_account_id(accountId));
+        List<TransactionModel> transactions = transactionRepo.findByFromAccountId(accountId);
+        transactions.addAll(transactionRepo.findByToAccountId(accountId));
 
 
         List<HashMap<String, Object>> result = transactions.stream().map(transaction -> {

@@ -1,11 +1,16 @@
 package com.ejada.accounts.Models;
 
 import java.sql.Timestamp;
-import java.time.Instant;
 import java.util.UUID;
+import jakarta.validation.constraints.NotNull;
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -24,23 +29,37 @@ import lombok.Setter;
 public class AccountModel {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id")
+    @NotNull
     private UUID id;
     @Column(name = "user_id")
+    @NotNull
     private UUID userId;
     @Column(name = "account_number", unique = true)
+    @NotNull
     private String accountNumber;
     @Column(name = "account_type")
+    @NotNull
+    @Enumerated(EnumType.STRING)
     private AccountType accountType;
     @Column(name = "balance")
+    @ColumnDefault("0.00")
+    @NotNull
     private Double balance = 0.00;
     @Column(name = "status")
-    private AccountStatus status = AccountStatus.ACTIVE;
+    @Enumerated(EnumType.STRING)
+    @ColumnDefault("'ACTIVE'")
+    @NotNull
+    private AccountStatus status;
     @Column(name = "created_at")
-     private Timestamp createdAt = Timestamp.from(Instant.now());
+    @CreationTimestamp
+    @NotNull
+    private Timestamp createdAt;
     @Column(name = "updated_at")
-    private Timestamp updatedAt = Timestamp.from(Instant.now());
+    @UpdateTimestamp
+    @NotNull
+    private Timestamp updatedAt;
 
 
 }
