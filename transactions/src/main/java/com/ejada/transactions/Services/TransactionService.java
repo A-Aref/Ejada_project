@@ -17,6 +17,9 @@ public class TransactionService {
     @Autowired
     private TransactionRepo transactionRepo;
     
+    public TransactionModel getTransaction(UUID transactionId) {
+        return transactionRepo.findById(transactionId).orElse(null);
+    }
 
     public List<HashMap<String,Object>> getTransactions(UUID accountId) {
 

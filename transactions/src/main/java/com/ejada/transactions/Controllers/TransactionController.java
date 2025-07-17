@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import com.ejada.transactions.Services.TransactionService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import com.ejada.transactions.Models.TransactionModel;
+import com.ejada.transactions.Models.TransactionStatus;
 
 @RestController
 @RequestMapping("/transactions")
@@ -23,6 +25,10 @@ public class TransactionController {
 
     @Autowired
     private TransactionService transactionService;
+
+    @Autowired
+    private WebClient webClientAccounts;
+
 
     @GetMapping("/accounts/{accountId}/transactions")
     public ResponseEntity<HashMap<String, Object>> getTransactions(@PathVariable String accountId) {
@@ -45,12 +51,26 @@ public class TransactionController {
 
     @PostMapping("/transactions/transfer/initiation")
     public ResponseEntity<HashMap<String, Object>> initiateTransaction(HashMap<String, Object> body) {
+        ResponseEntity<Object> fromAccount = webClientAccounts.get()
+                .uri("/{accountId}", body.get("fromAccountId"))
+                .retrieve().toEntity(Object.class).block();
+        ResponseEntity<Object> toAccount = webClientAccounts.get()
+                .uri("/{accountId}", body.get("toAccountId"))
+                .retrieve().toEntity(Object.class).block();
+        if (fromAccount.getStatusCode().isError() || toAccount.getStatusCode().isError()) {
+            return ResponseEntity.status(400).body(
+                    new HashMap<String, Object>() {
+                        {
+                            put("message", "Invalid account");
+                        }
+                    });
+        }
         TransactionModel transaction = transactionService.initiateTransaction(body);
         if (transaction == null) {
             return ResponseEntity.status(400).body(
                     new HashMap<String, Object>() {
                         {
-                            put("message", "Invalid account or insufficient funds");
+                            put("message", "Invalid amount");
                         }
                     });
         }
@@ -67,23 +87,47 @@ public class TransactionController {
     @PostMapping("/transactions/transfer/execution")
     public ResponseEntity<HashMap<String, Object>> executeTransaction(@RequestBody HashMap<String, Object> body) {
         TransactionModel transaction = transactionService
-                .excuteTransaction(UUID.fromString(body.get("transactionId").toString()));
-        if (transaction == null) {
+                .getTransaction(UUID.fromString(body.get("transactionId").toString()));
+        if (transaction == null || transaction.getStatus() == TransactionStatus.SUCCESS) {
             return ResponseEntity.status(400).body(
                     new HashMap<String, Object>() {
                         {
-                            put("message", "Invalid account or insufficient funds");
+                            put("message", "Invalid transaction or already executed");
                         }
                     });
         }
-        return ResponseEntity.status(200).body(
-                new HashMap<String, Object>() {
+        ResponseEntity<Object> excuteTransfer = webClientAccounts.post().uri("/transfer")
+                .bodyValue(new HashMap<String, Object>() {
                     {
-                        put("transactionId", transaction.getId());
-                        put("status", transaction.getStatus().getString());
-                        put("timestamp", transaction.getCreatedAt().toString());
+                        put("fromAccountId", transaction.getFromAccountId());
+                        put("toAccountId", transaction.getToAccountId());
+                        put("amount", transaction.getAmount());
                     }
-                });
+                })
+                .retrieve().toEntity(Object.class).block();
+
+        if (excuteTransfer.getStatusCode().isError()) {
+            transactionService.cancelTransaction(transaction.getId());
+            @SuppressWarnings("unchecked")
+            HashMap<String, Object> hash = (HashMap<String, Object>) excuteTransfer.getBody();
+            String message = hash != null ? (String) hash.get("message") : "Transfer failed";
+            return ResponseEntity.status(400).body(
+                    new HashMap<String, Object>() {
+                        {
+                            put("message", "Transfer failed due" + message);
+                        }
+                    });
+        } else {
+            transactionService.excuteTransaction(transaction.getId());
+            return ResponseEntity.status(200).body(
+                    new HashMap<String, Object>() {
+                        {
+                            put("transactionId", transaction.getId());
+                            put("status", transaction.getStatus().getString());
+                            put("timestamp", transaction.getCreatedAt().toString());
+                        }
+                    });
+        }
     }
 
 }
