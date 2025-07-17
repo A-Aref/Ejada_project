@@ -1,7 +1,5 @@
 package com.ejada.accounts.Services;
 
-import java.sql.Timestamp;
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
@@ -52,6 +50,10 @@ public class AccountService {
         }
     }
 
+    public List<AccountModel> getActiveAccounts() {
+        return accountRepo.findByStatus(AccountStatus.ACTIVE);
+    }
+
     public void updateAmount(UUID fromAccountId,UUID toAccountId, Double amount) {
         AccountModel toAccount = accountRepo.findById(fromAccountId).orElse(null);
         AccountModel fromAccount = accountRepo.findById(toAccountId).orElse(null);
@@ -60,15 +62,13 @@ public class AccountService {
             if(fromAccount.getBalance() >= amount) {
                 fromAccount.setBalance(fromAccount.getBalance() - amount);
                 toAccount.setBalance(toAccount.getBalance() + amount);
-                fromAccount.setUpdatedAt(Timestamp.from(Instant.now()));
-                toAccount.setUpdatedAt(Timestamp.from(Instant.now()));
                 accountRepo.save(fromAccount);
                 accountRepo.save(toAccount);
             } else {
-                throw new IllegalArgumentException("Insufficient funds in the source account.");
+                throw new IllegalArgumentException("insufficient funds in the source account.");
             }
         } else {
-            throw new IllegalArgumentException("Account not found.");
+            throw new IllegalArgumentException("'to' or 'for' account not found.");
         }
     }
 
