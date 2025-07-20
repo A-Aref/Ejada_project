@@ -45,15 +45,16 @@ public class TransactionService {
     }
     
     public TransactionModel initiateTransaction(HashMap<String,Object> transaction) {
-        Double amount = Double.parseDouble((String) transaction.get("amount"));
+        Double amount = (Double) transaction.get("amount");
         if (amount <= 0) {
             return null;
         }
         TransactionModel newTransaction = new TransactionModel();
         newTransaction.setFromAccountId(UUID.fromString((String) transaction.get("fromAccountId")));
         newTransaction.setToAccountId(UUID.fromString((String) transaction.get("toAccountId")));
-        newTransaction.setAmount(Double.parseDouble((String) transaction.get("amount")));
+        newTransaction.setAmount(amount);
         newTransaction.setStatus(TransactionStatus.INITIATED);
+        newTransaction.setCreatedAt(new java.sql.Timestamp(System.currentTimeMillis()));
         if (transaction.containsKey("description")) {
             newTransaction.setDescription((String) transaction.get("description"));
         }

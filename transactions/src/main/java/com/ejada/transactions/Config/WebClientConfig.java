@@ -14,7 +14,7 @@ public class WebClientConfig {
     public WebClient webClientAccounts()
     {
         return WebClient.builder()
-        .baseUrl("http://localhost:8081/accounts")
+        .baseUrl("http://localhost:8082/accounts")
         .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
         .build();
     }

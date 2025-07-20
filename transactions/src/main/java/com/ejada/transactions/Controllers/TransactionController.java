@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.ejada.transactions.Services.TransactionService;
+
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -30,7 +32,7 @@ public class TransactionController {
     private WebClient webClientAccounts;
 
 
-    @GetMapping("/accounts/{accountId}/transactions")
+    @GetMapping("/accounts/{accountId}")
     public ResponseEntity<HashMap<String, Object>> getTransactions(@PathVariable String accountId) {
         List<HashMap<String, Object>> transactions = transactionService.getTransactions(UUID.fromString(accountId));
         if (transactions.isEmpty()) {
@@ -49,8 +51,8 @@ public class TransactionController {
                 });
     }
 
-    @PostMapping("/transactions/transfer/initiation")
-    public ResponseEntity<HashMap<String, Object>> initiateTransaction(HashMap<String, Object> body) {
+    @PostMapping("/transfer/initiation")
+    public ResponseEntity<HashMap<String, Object>> initiateTransaction(@RequestBody HashMap<String, Object> body) {
         ResponseEntity<Object> fromAccount = webClientAccounts.get()
                 .uri("/{accountId}", body.get("fromAccountId"))
                 .retrieve().toEntity(Object.class).block();
@@ -84,7 +86,7 @@ public class TransactionController {
                 });
     }
 
-    @PostMapping("/transactions/transfer/execution")
+    @PostMapping("/transfer/execution")
     public ResponseEntity<HashMap<String, Object>> executeTransaction(@RequestBody HashMap<String, Object> body) {
         TransactionModel transaction = transactionService
                 .getTransaction(UUID.fromString(body.get("transactionId").toString()));
@@ -96,7 +98,7 @@ public class TransactionController {
                         }
                     });
         }
-        ResponseEntity<Object> excuteTransfer = webClientAccounts.post().uri("/transfer")
+        ResponseEntity<Object> excuteTransfer = webClientAccounts.put().uri("/transfer")
                 .bodyValue(new HashMap<String, Object>() {
                     {
                         put("fromAccountId", transaction.getFromAccountId());
@@ -130,4 +132,13 @@ public class TransactionController {
         }
     }
 
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<HashMap<String, Object>> handleException(Exception e) {
+        return ResponseEntity.status(500).body(
+                new HashMap<String, Object>() {
+                    {
+                        put("message", "An unexpected error occurred: " + e.getMessage());
+                    }
+                });
+    }
 }

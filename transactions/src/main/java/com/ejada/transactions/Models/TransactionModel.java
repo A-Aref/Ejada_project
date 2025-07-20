@@ -49,7 +49,6 @@ public class TransactionModel {
     @ColumnDefault("'INITIATED'")
     private TransactionStatus status;
     @Column(name = "created_at")
-    @NotNull
     @CreationTimestamp
     private Timestamp createdAt;
 
