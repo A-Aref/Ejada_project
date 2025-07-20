@@ -4,7 +4,6 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
-import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
@@ -34,36 +33,23 @@ public class DeactivateAccount {
             if (account.getCreatedAt().after(oneDayAgo)) {
                 return;
             }
-            
-            ResponseEntity<HashMap<String, Object>> response = 
-                    webClientTransactions.get().uri("/accounts/{accountId}/transactions",account.getId())
+
+            ResponseEntity<HashMap<String, Object>> response = webClientTransactions.get()
+                    .uri("/accounts/{accountId}/getLatest", account.getId())
                     .retrieve()
-                    .toEntity(new ParameterizedTypeReference<HashMap<String, Object>>(){})
+                    .toEntity(new ParameterizedTypeReference<HashMap<String, Object>>() {
+                    })
                     .block();
-            
-            HashMap<String, Object> responseBody = response.getBody();
-            if (responseBody == null) {
-                return;
-            }
-            Object transactionsObj = responseBody.get("transactions");
-            if (!(transactionsObj instanceof List)) {
-                return;
-            }
-            @SuppressWarnings("unchecked")
-            List<HashMap<String, Object>> transactions = (List<HashMap<String, Object>>) transactionsObj;
-            boolean beforeOneDay = true;
-            if (response.getStatusCode() == HttpStatusCode.valueOf(200)) {
-                for (HashMap<String, Object> transaction : transactions) {
-                    Timestamp transactionTimestamp = Timestamp.valueOf((String) transaction.get("timestamp"));
-                    if (transactionTimestamp.after(oneDayAgo)) {
-                        beforeOneDay = false;
-                        break;
-                    }
+
+            HashMap<String, Object> transaction = response.getBody();
+
+            if (response.getStatusCode() == HttpStatusCode.valueOf(200) && transaction != null) {
+                Timestamp transactionTimestamp = Timestamp.valueOf((String) transaction.get("timestamp"));
+                if (transactionTimestamp.before(oneDayAgo)) {
+                    accountService.setInactive(account.getId());
                 }
             }
-            if (beforeOneDay) {
-                accountService.setInactive(account.getId());
-            }
+
         });
     }
 

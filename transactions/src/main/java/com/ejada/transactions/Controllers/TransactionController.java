@@ -132,6 +132,20 @@ public class TransactionController {
         }
     }
 
+    @PostMapping("/accounts/{accountId}/getLatest")
+    public ResponseEntity<HashMap<String, Object>> getLatestTransaction(@PathVariable String accountId) {
+        HashMap<String,Object> transaction = transactionService.getLatestTransaction(UUID.fromString(accountId));
+        if (transaction == null) {
+            return ResponseEntity.status(404).body(
+                    new HashMap<String, Object>() {
+                        {
+                            put("message", "No transactions found for this account");
+                        }
+                    });
+        }
+        return ResponseEntity.status(200).body(transaction);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<HashMap<String, Object>> handleException(Exception e) {
         return ResponseEntity.status(500).body(

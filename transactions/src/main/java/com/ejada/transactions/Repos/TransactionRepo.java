@@ -11,6 +11,8 @@ import com.ejada.transactions.Models.TransactionModel;
 @Repository
 public interface TransactionRepo extends JpaRepository<TransactionModel, UUID> {
 
-    public List<TransactionModel> findByFromAccountId(UUID fromAccountId);
-    public List<TransactionModel> findByToAccountId(UUID toAccountId);
+    public List<TransactionModel> findByFromAccountIdAndToAccountId(UUID fromAccountId, UUID toAccountId);
+    
+    // Find by both account IDs ordered by created_at descending, get first (most recent)
+    public TransactionModel findFirstByFromAccountIdAndToAccountIdOrderByCreatedAtDesc(UUID fromAccountId, UUID toAccountId);
 }

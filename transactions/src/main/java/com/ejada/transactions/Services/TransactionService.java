@@ -21,10 +21,24 @@ public class TransactionService {
         return transactionRepo.findById(transactionId).orElse(null);
     }
 
+    public HashMap<String,Object> getLatestTransaction(UUID accountId) {
+        TransactionModel transaction = transactionRepo.findFirstByFromAccountIdAndToAccountIdOrderByCreatedAtDesc(accountId, accountId);
+        if (transaction == null) {
+            return null;
+        }
+        HashMap<String, Object> map = new HashMap<>();
+        map.put("transactionId", transaction.getId());
+        map.put("fromAccountId", transaction.getFromAccountId());
+        map.put("toAccountId", transaction.getToAccountId());
+        map.put("amount", transaction.getAmount());
+        map.put("description", transaction.getDescription());
+        map.put("timestamp", transaction.getCreatedAt().toString());
+        return map;
+    }
+
     public List<HashMap<String,Object>> getTransactions(UUID accountId) {
 
-        List<TransactionModel> transactions = transactionRepo.findByFromAccountId(accountId);
-        transactions.addAll(transactionRepo.findByToAccountId(accountId));
+        List<TransactionModel> transactions = transactionRepo.findByFromAccountIdAndToAccountId(accountId, accountId);
 
 
         List<HashMap<String, Object>> result = transactions.stream().map(transaction -> {
