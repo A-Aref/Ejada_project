@@ -1,5 +1,6 @@
 package com.ejada.transactions.Controllers;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import com.ejada.transactions.Services.KafkaProducerService;
 import com.ejada.transactions.Services.TransactionService;
 
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -29,13 +31,22 @@ public class TransactionController {
     private TransactionService transactionService;
 
     @Autowired
-    private WebClient webClientAccounts;
+    private KafkaProducerService kafkaProducerService;
 
+    @Autowired
+    private WebClient webClientAccounts;
 
     @GetMapping("/accounts/{accountId}")
     public ResponseEntity<HashMap<String, Object>> getTransactions(@PathVariable String accountId) {
         List<HashMap<String, Object>> transactions = transactionService.getTransactions(UUID.fromString(accountId));
         if (transactions.isEmpty()) {
+            kafkaProducerService.sendMessage(new HashMap<String, Object>() {
+                {
+                    put("message", "No transactions found for this account");
+                    put("messageType", "Response");
+                    put("dateTime", Instant.now().toString());
+                }
+            });
             return ResponseEntity.status(404).body(
                     new HashMap<String, Object>() {
                         {
@@ -43,6 +54,13 @@ public class TransactionController {
                         }
                     });
         }
+        kafkaProducerService.sendMessage(new HashMap<String, Object>() {
+            {
+                put("message", "Transactions retrieved successfully");
+                put("messageType", "Response");
+                put("dateTime", Instant.now().toString());
+            }
+        });
         return ResponseEntity.status(200).body(
                 new HashMap<String, Object>() {
                     {
@@ -60,6 +78,13 @@ public class TransactionController {
                 .uri("/{accountId}", body.get("toAccountId"))
                 .retrieve().toEntity(Object.class).block();
         if (fromAccount.getStatusCode().isError() || toAccount.getStatusCode().isError()) {
+            kafkaProducerService.sendMessage(new HashMap<String, Object>() {
+                {
+                    put("message", "Invalid account");
+                    put("messageType", "Error");
+                    put("dateTime", Instant.now().toString());
+                }
+            });
             return ResponseEntity.status(400).body(
                     new HashMap<String, Object>() {
                         {
@@ -69,6 +94,13 @@ public class TransactionController {
         }
         TransactionModel transaction = transactionService.initiateTransaction(body);
         if (transaction == null) {
+            kafkaProducerService.sendMessage(new HashMap<String, Object>() {
+                {
+                    put("message", "Invalid amount");
+                    put("messageType", "Error");
+                    put("dateTime", Instant.now().toString());
+                }
+            });
             return ResponseEntity.status(400).body(
                     new HashMap<String, Object>() {
                         {
@@ -76,6 +108,13 @@ public class TransactionController {
                         }
                     });
         }
+        kafkaProducerService.sendMessage(new HashMap<String, Object>() {
+            {
+                put("message", "Transaction initiated successfully");
+                put("messageType", "Response");
+                put("dateTime", Instant.now().toString());
+            }
+        });
         return ResponseEntity.status(200).body(
                 new HashMap<String, Object>() {
                     {
@@ -134,8 +173,15 @@ public class TransactionController {
 
     @GetMapping("/accounts/{accountId}/getLatest")
     public ResponseEntity<HashMap<String, Object>> getLatestTransaction(@PathVariable String accountId) {
-        HashMap<String,Object> transaction = transactionService.getLatestTransaction(UUID.fromString(accountId));
+        HashMap<String, Object> transaction = transactionService.getLatestTransaction(UUID.fromString(accountId));
         if (transaction == null) {
+            kafkaProducerService.sendMessage(new HashMap<String, Object>() {
+                {
+                    put("message", "No transactions found for this account");
+                    put("messageType", "Response");
+                    put("dateTime", Instant.now().toString());
+                }
+            });
             return ResponseEntity.status(404).body(
                     new HashMap<String, Object>() {
                         {
@@ -143,11 +189,25 @@ public class TransactionController {
                         }
                     });
         }
+        kafkaProducerService.sendMessage(new HashMap<String, Object>() {
+            {
+                put("message", "Latest transaction retrieved successfully");
+                put("messageType", "Response");
+                put("dateTime", Instant.now().toString());
+            }
+        });
         return ResponseEntity.status(200).body(transaction);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<HashMap<String, Object>> handleException(Exception e) {
+    kafkaProducerService.sendMessage(new HashMap<String, Object>() {
+        {
+            put("message", "An unexpected error occurred: " + e.getMessage());
+            put("messageType", "Response");
+            put("dateTime", Instant.now().toString());
+        }
+    });
         return ResponseEntity.status(500).body(
                 new HashMap<String, Object>() {
                     {

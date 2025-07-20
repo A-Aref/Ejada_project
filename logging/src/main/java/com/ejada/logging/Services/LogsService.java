@@ -1,8 +1,9 @@
 package com.ejada.logging.Services;
 
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.List;
-import java.util.Map;
+import java.util.HashMap;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,11 +22,11 @@ public class LogsService {
         return logsRepo.findAll();
     }
 
-    public LogsModel saveLog(Map<String,Object> log) {
+    public LogsModel saveLog(HashMap<String,Object> log) {
         LogsModel logsModel = new LogsModel();
         logsModel.setMessage((String) log.get("message"));
-        logsModel.setMessageType(MessageType.valueOf((String) log.get("messageType")));
-        logsModel.setDateTime(Timestamp.valueOf((String) log.get("timestamp")));
+        logsModel.setMessageType(MessageType.fromString((String) log.get("messageType")));
+        logsModel.setDateTime(Timestamp.from(Instant.parse((String) log.get("dateTime"))));
         return logsRepo.save(logsModel);
     } 
 }
