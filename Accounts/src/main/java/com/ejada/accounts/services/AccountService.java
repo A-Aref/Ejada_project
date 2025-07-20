@@ -25,7 +25,7 @@ public class AccountService {
             return null;
         }
         AccountModel account = new AccountModel();
-        account.setUserId((UUID) accountData.get("userId"));
+        account.setUserId(UUID.fromString((String)accountData.get("userId")));
         account.setAccountType(accountType);
         account.setBalance(initialBalance);
         return accountRepo.save(account);
@@ -59,7 +59,7 @@ public class AccountService {
         AccountModel fromAccount = accountRepo.findById(toAccountId).orElse(null);
 
         if (toAccount != null && fromAccount != null) {
-            if(fromAccount.getBalance() >= amount) {
+            if(fromAccount.getBalance() >= amount && amount > 0) {
                 fromAccount.setBalance(fromAccount.getBalance() - amount);
                 toAccount.setBalance(toAccount.getBalance() + amount);
                 accountRepo.save(fromAccount);

@@ -14,6 +14,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -36,7 +37,7 @@ public class AccountModel {
     @Column(name = "user_id")
     @NotNull
     private UUID userId;
-    @Column(name = "account_number", unique = true)
+    @Column(name = "account_number", unique = true,nullable = false)
     @NotNull
     private String accountNumber;
     @Column(name = "account_type")
@@ -51,15 +52,19 @@ public class AccountModel {
     @Enumerated(EnumType.STRING)
     @ColumnDefault("'ACTIVE'")
     @NotNull
-    private AccountStatus status;
+    private AccountStatus status = AccountStatus.ACTIVE;
     @Column(name = "created_at")
     @CreationTimestamp
-    @NotNull
     private Timestamp createdAt;
     @Column(name = "updated_at")
     @UpdateTimestamp
-    @NotNull
     private Timestamp updatedAt;
+
+
+    @PrePersist
+    public void generateAccountNumber() {
+        this.accountNumber = "ACCT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+    }
 
 
 }

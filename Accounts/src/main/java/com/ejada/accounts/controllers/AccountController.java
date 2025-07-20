@@ -62,7 +62,7 @@ public class AccountController {
                 });
     }
 
-    @GetMapping("/users/{userId}/accounts")
+    @GetMapping("/users/{userId}")
     public ResponseEntity<HashMap<String, Object>> getAllAccounts(@PathVariable String userId) {
         List<AccountModel> accounts = accountService.getAllAccounts(UUID.fromString(userId));
         if (accounts.isEmpty()) {
@@ -121,4 +121,13 @@ public class AccountController {
         }
     }
 
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<HashMap<String, Object>> handleException(Exception e) {
+        return ResponseEntity.status(500).body(
+                new HashMap<String, Object>() {
+                    {
+                        put("message", "An unexpected error occurred: " + e.getMessage());
+                    }
+                });
+    }
 }
