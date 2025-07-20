@@ -33,24 +33,26 @@ public class DeactivateAccount {
             if (account.getCreatedAt().after(oneDayAgo)) {
                 return;
             }
+            try {
+                ResponseEntity<HashMap<String, Object>> response = webClientTransactions.get()
+                        .uri("/accounts/{accountId}/getLatest", account.getId())
+                        .retrieve()
+                        .toEntity(new ParameterizedTypeReference<HashMap<String, Object>>() {
+                        })
+                        .block();
+                HashMap<String, Object> transaction = response.getBody();
 
-            ResponseEntity<HashMap<String, Object>> response = webClientTransactions.get()
-                    .uri("/accounts/{accountId}/getLatest", account.getId())
-                    .retrieve()
-                    .toEntity(new ParameterizedTypeReference<HashMap<String, Object>>() {
-                    })
-                    .block();
-
-            HashMap<String, Object> transaction = response.getBody();
-
-            if (response.getStatusCode() == HttpStatusCode.valueOf(200) && transaction != null) {
-                Timestamp transactionTimestamp = Timestamp.valueOf((String) transaction.get("timestamp"));
-                if (transactionTimestamp.before(oneDayAgo)) {
-                    accountService.setInactive(account.getId());
+                if (response.getStatusCode() == HttpStatusCode.valueOf(200) && transaction != null) {
+                    Timestamp transactionTimestamp = Timestamp.valueOf((String) transaction.get("timestamp"));
+                    if (transactionTimestamp.before(oneDayAgo)) {
+                        accountService.setInactive(account.getId());
+                    }
                 }
+            } catch (Exception e) {
+                System.err.println("Error deactivating account " + account.getId() + ": " + e.getMessage());
+                return;
             }
 
         });
     }
-
 }

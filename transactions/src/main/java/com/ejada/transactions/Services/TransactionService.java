@@ -22,7 +22,7 @@ public class TransactionService {
     }
 
     public HashMap<String,Object> getLatestTransaction(UUID accountId) {
-        TransactionModel transaction = transactionRepo.findFirstByFromAccountIdAndToAccountIdOrderByCreatedAtDesc(accountId, accountId);
+        TransactionModel transaction = transactionRepo.findFirstByFromAccountIdOrToAccountIdOrderByCreatedAtDesc(accountId, accountId);
         if (transaction == null) {
             return null;
         }
@@ -38,7 +38,7 @@ public class TransactionService {
 
     public List<HashMap<String,Object>> getTransactions(UUID accountId) {
 
-        List<TransactionModel> transactions = transactionRepo.findByFromAccountIdAndToAccountId(accountId, accountId);
+        List<TransactionModel> transactions = transactionRepo.findByFromAccountIdOrToAccountId(accountId, accountId);
 
 
         List<HashMap<String, Object>> result = transactions.stream().map(transaction -> {

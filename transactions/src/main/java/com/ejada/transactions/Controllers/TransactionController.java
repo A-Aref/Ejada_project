@@ -132,7 +132,7 @@ public class TransactionController {
         }
     }
 
-    @PostMapping("/accounts/{accountId}/getLatest")
+    @GetMapping("/accounts/{accountId}/getLatest")
     public ResponseEntity<HashMap<String, Object>> getLatestTransaction(@PathVariable String accountId) {
         HashMap<String,Object> transaction = transactionService.getLatestTransaction(UUID.fromString(accountId));
         if (transaction == null) {

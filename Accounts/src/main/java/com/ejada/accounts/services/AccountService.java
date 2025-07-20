@@ -47,6 +47,7 @@ public class AccountService {
         AccountModel account = accountRepo.findById(accountId).orElse(null);
         if (account != null) {
             account.setStatus(AccountStatus.INACTIVE);
+            accountRepo.save(account);
         }
     }
 
@@ -62,6 +63,8 @@ public class AccountService {
             if(fromAccount.getBalance() >= amount && amount > 0) {
                 fromAccount.setBalance(fromAccount.getBalance() - amount);
                 toAccount.setBalance(toAccount.getBalance() + amount);
+                fromAccount.setStatus(AccountStatus.ACTIVE);
+                toAccount.setStatus(AccountStatus.ACTIVE);
                 accountRepo.save(fromAccount);
                 accountRepo.save(toAccount);
             } else {
