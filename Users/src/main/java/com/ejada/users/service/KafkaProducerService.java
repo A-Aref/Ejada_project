@@ -24,9 +24,7 @@ public class KafkaProducerService {
     public void sendMessage(Map<String, Object> message, String messageType) {
         try {
             String jsonString = objectMapper.writeValueAsString(message);
-            String escapeString = objectMapper.writeValueAsString(jsonString);
-            System.out.println("Sending message to Kafka: " + escapeString);
-            log.put("message", escapeString);
+            log.put("message", jsonString);
             log.put("messageType", messageType);
             log.put("dateTime", Instant.now().toString());
             kafkaTemplate.send("Logs", log);
