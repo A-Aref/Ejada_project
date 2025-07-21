@@ -1,6 +1,5 @@
 package com.ejada.users.service;
 
-import com.ejada.users.config.SecurityConfig;
 import com.ejada.users.dto.LoginRequest;
 import com.ejada.users.dto.RegisterRequest;
 import com.ejada.users.exception.DuplicateUserException;

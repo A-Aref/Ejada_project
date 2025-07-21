@@ -2,7 +2,6 @@ package com.ejada.users.repository;
 
 import com.ejada.users.model.UserModel;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 
 import java.util.UUID;
 
