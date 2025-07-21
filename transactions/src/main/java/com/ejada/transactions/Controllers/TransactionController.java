@@ -1,6 +1,5 @@
 package com.ejada.transactions.Controllers;
 
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
@@ -38,39 +37,26 @@ public class TransactionController {
 
     @GetMapping("/accounts/{accountId}")
     public ResponseEntity<HashMap<String, Object>> getTransactions(@PathVariable String accountId) {
+        // TODO: needs to add body
+        kafkaProducerService.sendMessage(null, "Request");
         List<HashMap<String, Object>> transactions = transactionService.getTransactions(UUID.fromString(accountId));
         if (transactions.isEmpty()) {
-            kafkaProducerService.sendMessage(new HashMap<String, Object>() {
-                {
-                    put("message", "No transactions found for this account");
-                    put("messageType", "Response");
-                    put("dateTime", Instant.now().toString());
-                }
-            });
-            return ResponseEntity.status(404).body(
-                    new HashMap<String, Object>() {
-                        {
-                            put("message", "No transactions found for this account");
-                        }
-                    });
+            HashMap<String, Object> response = new HashMap<String, Object>();
+            response.put("message", "No transactions found for this account");
+            kafkaProducerService.sendMessage(response, "Response");
+            return ResponseEntity.status(404).body(response);
         }
-        kafkaProducerService.sendMessage(new HashMap<String, Object>() {
-            {
-                put("message", "Transactions retrieved successfully");
-                put("messageType", "Response");
-                put("dateTime", Instant.now().toString());
-            }
-        });
-        return ResponseEntity.status(200).body(
-                new HashMap<String, Object>() {
-                    {
-                        put("transactions", transactions);
-                    }
-                });
+
+        HashMap<String, Object> response = new HashMap<String, Object>();
+        response.put("transactions", transactions);
+
+        kafkaProducerService.sendMessage(response, "Response");
+        return ResponseEntity.status(200).body(response);
     }
 
     @PostMapping("/transfer/initiation")
     public ResponseEntity<HashMap<String, Object>> initiateTransaction(@RequestBody HashMap<String, Object> body) {
+        kafkaProducerService.sendMessage(body, "Request");
         ResponseEntity<Object> fromAccount = webClientAccounts.get()
                 .uri("/{accountId}", body.get("fromAccountId"))
                 .retrieve().toEntity(Object.class).block();
@@ -78,64 +64,38 @@ public class TransactionController {
                 .uri("/{accountId}", body.get("toAccountId"))
                 .retrieve().toEntity(Object.class).block();
         if (fromAccount.getStatusCode().isError() || toAccount.getStatusCode().isError()) {
-            kafkaProducerService.sendMessage(new HashMap<String, Object>() {
-                {
-                    put("message", "Invalid account");
-                    put("messageType", "Error");
-                    put("dateTime", Instant.now().toString());
-                }
-            });
-            return ResponseEntity.status(400).body(
-                    new HashMap<String, Object>() {
-                        {
-                            put("message", "Invalid account");
-                        }
-                    });
+
+            HashMap<String, Object> errorResponse = new HashMap<String, Object>();
+            errorResponse.put("message", "Invalid accounts");
+            kafkaProducerService.sendMessage(errorResponse, "Response");
+            return ResponseEntity.status(400).body(errorResponse);
         }
         TransactionModel transaction = transactionService.initiateTransaction(body);
         if (transaction == null) {
-            kafkaProducerService.sendMessage(new HashMap<String, Object>() {
-                {
-                    put("message", "Invalid amount");
-                    put("messageType", "Error");
-                    put("dateTime", Instant.now().toString());
-                }
-            });
-            return ResponseEntity.status(400).body(
-                    new HashMap<String, Object>() {
-                        {
-                            put("message", "Invalid amount");
-                        }
-                    });
+            HashMap<String, Object> errorResponse = new HashMap<String, Object>();
+            errorResponse.put("message", "Invalid amount");
+            kafkaProducerService.sendMessage(errorResponse, "Response");
+            return ResponseEntity.status(400).body(errorResponse);
         }
-        kafkaProducerService.sendMessage(new HashMap<String, Object>() {
-            {
-                put("message", "Transaction initiated successfully");
-                put("messageType", "Response");
-                put("dateTime", Instant.now().toString());
-            }
-        });
-        return ResponseEntity.status(200).body(
-                new HashMap<String, Object>() {
-                    {
-                        put("transactionId", transaction.getId());
-                        put("status", transaction.getStatus().getString());
-                        put("timestamp", transaction.getCreatedAt().toString());
-                    }
-                });
+
+        HashMap<String, Object> response = new HashMap<String, Object>();
+        response.put("transactionId", transaction.getId());
+        response.put("status", transaction.getStatus().getString());
+        response.put("timestamp", transaction.getCreatedAt().toString());
+        kafkaProducerService.sendMessage(response, "Response");
+        return ResponseEntity.status(200).body(response);
     }
 
     @PostMapping("/transfer/execution")
     public ResponseEntity<HashMap<String, Object>> executeTransaction(@RequestBody HashMap<String, Object> body) {
+        kafkaProducerService.sendMessage(body, "Request");
         TransactionModel transaction = transactionService
                 .getTransaction(UUID.fromString(body.get("transactionId").toString()));
         if (transaction == null || transaction.getStatus() == TransactionStatus.SUCCESS) {
-            return ResponseEntity.status(400).body(
-                    new HashMap<String, Object>() {
-                        {
-                            put("message", "Invalid transaction or already executed");
-                        }
-                    });
+            HashMap<String, Object> response = new HashMap<String, Object>();
+            response.put("message", "Invalid transaction or already executed");
+            kafkaProducerService.sendMessage(response, "Response");
+            return ResponseEntity.status(400).body(response);
         }
         ResponseEntity<Object> excuteTransfer = webClientAccounts.put().uri("/transfer")
                 .bodyValue(new HashMap<String, Object>() {
@@ -151,68 +111,42 @@ public class TransactionController {
             transactionService.cancelTransaction(transaction.getId());
             @SuppressWarnings("unchecked")
             HashMap<String, Object> hash = (HashMap<String, Object>) excuteTransfer.getBody();
-            String message = hash != null ? (String) hash.get("message") : "Transfer failed";
-            return ResponseEntity.status(400).body(
-                    new HashMap<String, Object>() {
-                        {
-                            put("message", "Transfer failed due" + message);
-                        }
-                    });
+            String message = hash != null ? "Transfer failed due" + (String) hash.get("message") : "Transfer failed";
+            HashMap<String, Object> errorResponse = new HashMap<String, Object>();
+            errorResponse.put("message", message);
+            kafkaProducerService.sendMessage(errorResponse, "Response");
+            return ResponseEntity.status(400).body(errorResponse);
         } else {
             transactionService.excuteTransaction(transaction.getId());
-            return ResponseEntity.status(200).body(
-                    new HashMap<String, Object>() {
-                        {
-                            put("transactionId", transaction.getId());
-                            put("status", transaction.getStatus().getString());
-                            put("timestamp", transaction.getCreatedAt().toString());
-                        }
-                    });
+            HashMap<String, Object> response = new HashMap<String, Object>();
+            response.put("transactionId", transaction.getId());
+            response.put("status", transaction.getStatus().getString());
+            response.put("timestamp", transaction.getCreatedAt().toString());
+            kafkaProducerService.sendMessage(response, "Response");
+            return ResponseEntity.status(200).body(response);
         }
     }
 
     @GetMapping("/accounts/{accountId}/getLatest")
     public ResponseEntity<HashMap<String, Object>> getLatestTransaction(@PathVariable String accountId) {
+        // TODO: needs to add body
+        kafkaProducerService.sendMessage(null, "Request");
         HashMap<String, Object> transaction = transactionService.getLatestTransaction(UUID.fromString(accountId));
         if (transaction == null) {
-            kafkaProducerService.sendMessage(new HashMap<String, Object>() {
-                {
-                    put("message", "No transactions found for this account");
-                    put("messageType", "Response");
-                    put("dateTime", Instant.now().toString());
-                }
-            });
-            return ResponseEntity.status(404).body(
-                    new HashMap<String, Object>() {
-                        {
-                            put("message", "No transactions found for this account");
-                        }
-                    });
+            HashMap<String, Object> response = new HashMap<String, Object>();
+            response.put("message", "No transactions found for this account");
+            kafkaProducerService.sendMessage(response, "Response");
+            return ResponseEntity.status(404).body(response);
         }
-        kafkaProducerService.sendMessage(new HashMap<String, Object>() {
-            {
-                put("message", "Latest transaction retrieved successfully");
-                put("messageType", "Response");
-                put("dateTime", Instant.now().toString());
-            }
-        });
+        kafkaProducerService.sendMessage(transaction, "Response");
         return ResponseEntity.status(200).body(transaction);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<HashMap<String, Object>> handleException(Exception e) {
-    kafkaProducerService.sendMessage(new HashMap<String, Object>() {
-        {
-            put("message", "An unexpected error occurred: " + e.getMessage());
-            put("messageType", "Response");
-            put("dateTime", Instant.now().toString());
-        }
-    });
-        return ResponseEntity.status(500).body(
-                new HashMap<String, Object>() {
-                    {
-                        put("message", "An unexpected error occurred: " + e.getMessage());
-                    }
-                });
+        HashMap<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("message", "An unexpected error occurred: " + e.getMessage());
+        kafkaProducerService.sendMessage(errorResponse, "Response");
+        return ResponseEntity.status(500).body(errorResponse);
     }
 }

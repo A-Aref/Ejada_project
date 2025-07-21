@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.ejada.accounts.Services.AccountService;
-import com.ejada.accounts.Services.KafkaProducerService;
 
 @Service
 
@@ -22,9 +21,6 @@ public class DeactivateAccount {
 
     @Autowired
     private AccountService accountService;
-
-    @Autowired
-    private KafkaProducerService kafkaProducerService;
 
     @Autowired
     private WebClient webClientTransactions;
@@ -49,20 +45,10 @@ public class DeactivateAccount {
                 if (response.getStatusCode() == HttpStatusCode.valueOf(200) && transaction != null) {
                     Timestamp transactionTimestamp = Timestamp.valueOf((String) transaction.get("timestamp"));
                     if (transactionTimestamp.before(oneDayAgo)) {
-                        kafkaProducerService.sendMessage(new HashMap<String, Object>() {{
-                            put("message", "Deactivating account " + account.getId() + " due to inactivity");
-                            put("messageType", "Response");
-                            put("dateTime", Instant.now().toString());
-                        }});
                         accountService.setInactive(account.getId());
                     }
                 }
             } catch (Exception e) {
-                kafkaProducerService.sendMessage(new HashMap<String, Object>() {{
-                    put("message", "Error deactivating account " + account.getId() + ": " + e.getMessage());
-                    put("messageType", "Error");
-                    put("dateTime", Instant.now().toString());
-                }});
                 return;
             }
 
