@@ -107,7 +107,6 @@ The Docker Compose configuration has been updated to:
 - **Username**: `root`
 - **Passwords**: 
   - Users, Logging, Accounts, Transactions: `12345678`
-  - BFF: `Flywithme1`
 
 ## Troubleshooting
 
@@ -124,8 +123,8 @@ The Docker Compose configuration has been updated to:
 4. **Verify user has privileges**: `SHOW GRANTS FOR 'root'@'%';`
 5. **If root@'%' doesn't exist**: 
    ```sql
-   CREATE USER 'root'@'%' IDENTIFIED BY '12345678';
-   GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION;
+   CREATE USER 'ejada_user'@'%' IDENTIFIED BY '12345678';
+   GRANT ALL PRIVILEGES ON *.* TO 'ejada_user'@'%' WITH GRANT OPTION;
    FLUSH PRIVILEGES;
    ```
 6. **Ensure root user exists for '%' host**
