@@ -13,15 +13,53 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 
 @RestController
 @RequestMapping("/logs")
+@Tag(name = "Logs", description = "System logging API endpoints")
 public class LogsController {
 
     @Autowired
     private LogsService logsService;
 
     @GetMapping("/")
+    @Operation(summary = "Get all system logs", 
+               description = "Retrieves all system logs from the database")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Logs retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                               examples = @ExampleObject(value = """
+                                   {
+                                       "message": "Logs retrieved successfully",
+                                       "logs": [
+                                           {
+                                               "id": 1,
+                                               "timestamp": "2024-01-01T10:00:00",
+                                               "level": "INFO",
+                                               "service": "users",
+                                               "message": "User login successful",
+                                               "details": "{\"userId\": \"123\", \"action\": \"login\"}"
+                                           }
+                                       ]
+                                   }
+                                   """))),
+        @ApiResponse(responseCode = "404", 
+                    description = "No logs found",
+                    content = @Content(mediaType = "application/json",
+                               examples = @ExampleObject(value = """
+                                   {
+                                       "message": "No logs found"
+                                   }
+                                   """)))
+    })
     public ResponseEntity<HashMap<String,Object>> getLogs() {
         HashMap<String, Object> response = new HashMap<>();
         response.put("message", "Logs retrieved successfully");

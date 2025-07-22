@@ -16,7 +16,7 @@ public class OpenApiConfig {
     @Bean
     public OpenAPI loggingServiceOpenAPI() {
         Server devServer = new Server();
-        devServer.setUrl("http://localhost:8083");
+        devServer.setUrl("http://localhost:8081");
         devServer.setDescription("Development server");
 
         Contact contact = new Contact();

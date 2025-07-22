@@ -11,11 +11,20 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import java.util.Map;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/bff")
+@Tag(name = "BFF", description = "Backend for Frontend API endpoints")
 public class BffController {
 
     private final BffService bffService;
@@ -28,7 +37,46 @@ public class BffController {
     }
 
     @GetMapping("/dashboard/{userId}")
-    public ResponseEntity<DashboardResponse> getUserDashboard(@PathVariable UUID userId) {
+    @Operation(summary = "Get user dashboard", 
+               description = "Retrieves aggregated dashboard data for a user including accounts and recent transactions")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Dashboard data retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                               examples = @ExampleObject(value = """
+                                   {
+                                       "userId": "123e4567-e89b-12d3-a456-426614174000",
+                                       "username": "john_doe",
+                                       "accounts": [
+                                           {
+                                               "accountId": "acc-123",
+                                               "accountNumber": "ACC123456789",
+                                               "balance": 1500.00,
+                                               "accountType": "SAVINGS"
+                                           }
+                                       ],
+                                       "recentTransactions": [
+                                           {
+                                               "transactionId": "txn-456",
+                                               "amount": 100.00,
+                                               "type": "TRANSFER",
+                                               "timestamp": "2024-01-01T10:00:00"
+                                           }
+                                       ]
+                                   }
+                                   """))),
+        @ApiResponse(responseCode = "404", 
+                    description = "User not found",
+                    content = @Content(mediaType = "application/json",
+                               examples = @ExampleObject(value = """
+                                   {
+                                       "message": "User not found"
+                                   }
+                                   """)))
+    })
+    public ResponseEntity<DashboardResponse> getUserDashboard(
+            @Parameter(description = "User ID to retrieve dashboard for", required = true)
+            @PathVariable UUID userId) {
         //TODO: Add body to the request
         kafkaProducerService.sendMessage(null, "Request");
         DashboardResponse dashboard = bffService.getDashboard(userId);

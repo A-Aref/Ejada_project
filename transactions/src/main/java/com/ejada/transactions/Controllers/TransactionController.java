@@ -22,8 +22,17 @@ import org.springframework.web.bind.annotation.RequestBody;
 import com.ejada.transactions.Models.TransactionModel;
 import com.ejada.transactions.Models.TransactionStatus;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
 @RequestMapping("/transactions")
+@Tag(name = "Transactions", description = "Transaction management API endpoints")
 public class TransactionController {
 
     @Autowired
@@ -36,7 +45,36 @@ public class TransactionController {
     private WebClient webClientAccounts;
 
     @GetMapping("/accounts/{accountId}")
-    public ResponseEntity<HashMap<String, Object>> getTransactions(@PathVariable String accountId) {
+    @Operation(summary = "Get transactions by account ID", 
+               description = "Retrieves all transactions for a specific account")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Successfully retrieved transactions",
+                    content = @Content(mediaType = "application/json",
+                               examples = @ExampleObject(value = """
+                                   {
+                                       "transactions": [
+                                           {
+                                               "id": "123e4567-e89b-12d3-a456-426614174000",
+                                               "amount": 100.00,
+                                               "status": "SUCCESS",
+                                               "timestamp": "2024-01-01T10:00:00"
+                                           }
+                                       ]
+                                   }
+                                   """))),
+        @ApiResponse(responseCode = "404", 
+                    description = "No transactions found for this account",
+                    content = @Content(mediaType = "application/json",
+                               examples = @ExampleObject(value = """
+                                   {
+                                       "message": "No transactions found for this account"
+                                   }
+                                   """)))
+    })
+    public ResponseEntity<HashMap<String, Object>> getTransactions(
+            @Parameter(description = "Account ID to retrieve transactions for", required = true)
+            @PathVariable String accountId) {
         // TODO: needs to add body
         kafkaProducerService.sendMessage(null, "Request");
         List<HashMap<String, Object>> transactions = transactionService.getTransactions(UUID.fromString(accountId));
@@ -55,7 +93,40 @@ public class TransactionController {
     }
 
     @PostMapping("/transfer/initiation")
-    public ResponseEntity<HashMap<String, Object>> initiateTransaction(@RequestBody HashMap<String, Object> body) {
+    @Operation(summary = "Initiate a transfer transaction", 
+               description = "Creates a new transfer transaction between two accounts")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Transaction initiated successfully",
+                    content = @Content(mediaType = "application/json",
+                               examples = @ExampleObject(value = """
+                                   {
+                                       "transactionId": "123e4567-e89b-12d3-a456-426614174000",
+                                       "status": "PENDING",
+                                       "timestamp": "2024-01-01T10:00:00"
+                                   }
+                                   """))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Invalid request - invalid accounts or amount",
+                    content = @Content(mediaType = "application/json",
+                               examples = @ExampleObject(value = """
+                                   {
+                                       "message": "Invalid accounts"
+                                   }
+                                   """)))
+    })
+    public ResponseEntity<HashMap<String, Object>> initiateTransaction(
+            @Parameter(description = "Transaction initiation request", required = true)
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                content = @Content(mediaType = "application/json",
+                          examples = @ExampleObject(value = """
+                              {
+                                  "fromAccountId": "123e4567-e89b-12d3-a456-426614174000",
+                                  "toAccountId": "987fcdeb-51a2-43d7-8f9e-123456789abc",
+                                  "amount": 100.00
+                              }
+                              """)))
+            @RequestBody HashMap<String, Object> body) {
         kafkaProducerService.sendMessage(body, "Request");
         ResponseEntity<Object> fromAccount = webClientAccounts.get()
                 .uri("/{accountId}", body.get("fromAccountId"))
@@ -87,7 +158,38 @@ public class TransactionController {
     }
 
     @PostMapping("/transfer/execution")
-    public ResponseEntity<HashMap<String, Object>> executeTransaction(@RequestBody HashMap<String, Object> body) {
+    @Operation(summary = "Execute a transfer transaction", 
+               description = "Executes a previously initiated transfer transaction")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Transaction executed successfully",
+                    content = @Content(mediaType = "application/json",
+                               examples = @ExampleObject(value = """
+                                   {
+                                       "transactionId": "123e4567-e89b-12d3-a456-426614174000",
+                                       "status": "SUCCESS",
+                                       "timestamp": "2024-01-01T10:00:00"
+                                   }
+                                   """))),
+        @ApiResponse(responseCode = "400", 
+                    description = "Invalid transaction or already executed",
+                    content = @Content(mediaType = "application/json",
+                               examples = @ExampleObject(value = """
+                                   {
+                                       "message": "Invalid transaction or already executed"
+                                   }
+                                   """)))
+    })
+    public ResponseEntity<HashMap<String, Object>> executeTransaction(
+            @Parameter(description = "Transaction execution request", required = true)
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                content = @Content(mediaType = "application/json",
+                          examples = @ExampleObject(value = """
+                              {
+                                  "transactionId": "123e4567-e89b-12d3-a456-426614174000"
+                              }
+                              """)))
+            @RequestBody HashMap<String, Object> body) {
         kafkaProducerService.sendMessage(body, "Request");
         TransactionModel transaction = transactionService
                 .getTransaction(UUID.fromString(body.get("transactionId").toString()));
@@ -128,7 +230,32 @@ public class TransactionController {
     }
 
     @GetMapping("/accounts/{accountId}/getLatest")
-    public ResponseEntity<HashMap<String, Object>> getLatestTransaction(@PathVariable String accountId) {
+    @Operation(summary = "Get latest transaction for account", 
+               description = "Retrieves the most recent transaction for a specific account")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", 
+                    description = "Successfully retrieved latest transaction",
+                    content = @Content(mediaType = "application/json",
+                               examples = @ExampleObject(value = """
+                                   {
+                                       "id": "123e4567-e89b-12d3-a456-426614174000",
+                                       "amount": 100.00,
+                                       "status": "SUCCESS",
+                                       "timestamp": "2024-01-01T10:00:00"
+                                   }
+                                   """))),
+        @ApiResponse(responseCode = "404", 
+                    description = "No transactions found for this account",
+                    content = @Content(mediaType = "application/json",
+                               examples = @ExampleObject(value = """
+                                   {
+                                       "message": "No transactions found for this account"
+                                   }
+                                   """)))
+    })
+    public ResponseEntity<HashMap<String, Object>> getLatestTransaction(
+            @Parameter(description = "Account ID to retrieve latest transaction for", required = true)
+            @PathVariable String accountId) {
         // TODO: needs to add body
         kafkaProducerService.sendMessage(null, "Request");
         HashMap<String, Object> transaction = transactionService.getLatestTransaction(UUID.fromString(accountId));
@@ -143,6 +270,16 @@ public class TransactionController {
     }
 
     @ExceptionHandler(Exception.class)
+    @Operation(summary = "Global exception handler", 
+               description = "Handles unexpected errors in the transaction API")
+    @ApiResponse(responseCode = "500", 
+                description = "Internal server error",
+                content = @Content(mediaType = "application/json",
+                          examples = @ExampleObject(value = """
+                              {
+                                  "message": "An unexpected error occurred: Error details"
+                              }
+                              """)))
     public ResponseEntity<HashMap<String, Object>> handleException(Exception e) {
         HashMap<String, Object> errorResponse = new HashMap<>();
         errorResponse.put("message", "An unexpected error occurred: " + e.getMessage());
