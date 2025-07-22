@@ -1,7 +1,7 @@
 package com.ejada.bff.controller;
 
 import com.ejada.bff.dto.DashboardResponse;
-import com.ejada.bff.exception.UserNotFoundException;
+import com.ejada.bff.exception.NotFoundException;
 import com.ejada.bff.service.BffService;
 import com.ejada.bff.service.KafkaProducerService;
 
@@ -39,7 +39,7 @@ public class BffController {
             kafkaProducerService.sendMessage(Map.of("response",dashboard), "Response");
             return ResponseEntity.ok(dashboard);
         }
-        catch(UserNotFoundException e){
+        catch(NotFoundException e){
             Map<String, Object> errorResponse = Map.of(
                     "status", 404,
                     "error", "Not Found",
