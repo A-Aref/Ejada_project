@@ -37,11 +37,16 @@ public class BffService {
                 .block();
     }
     private AccountTransactions getAccountTransactions(UUID accountId){
-        return transactionWebClient.get()
-                .uri("/transactions/accounts/{accountId}", accountId)
-                .retrieve()
-                .bodyToMono(AccountTransactions.class)
-                .block();
+        try {
+            return transactionWebClient.get()
+                    .uri("/transactions/accounts/{accountId}", accountId)
+                    .retrieve()
+                    .bodyToMono(AccountTransactions.class)
+                    .block();
+        } catch (Exception e) {
+            // Return empty transactions if no transactions found (404) or any other error
+            return new AccountTransactions(List.of());
+        }
     }
     public DashboardResponse getDashboard(UUID userId) {
         UserProfile userProfile = getUserProfile(userId);

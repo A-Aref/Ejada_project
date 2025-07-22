@@ -75,7 +75,7 @@ echo # Kafka Configuration
 echo KAFKA_BOOTSTRAP_SERVERS=!KAFKA_BOOTSTRAP_SERVERS!
 echo.
 echo # Microservice URLs for Accounts to communicate with
-echo TRANSACTION_SERVICE_URL=!TRANSACTIONS_SERVICE_URL!
+echo TRANSACTION_SERVICE_URL=http://transactions-service:!TRANSACTIONS_SERVICE_PORT!
 echo.
 ) > "%PROJECT_ROOT%\Accounts\.env"
 
@@ -96,7 +96,7 @@ echo # Kafka Configuration
 echo KAFKA_BOOTSTRAP_SERVERS=!KAFKA_BOOTSTRAP_SERVERS!
 echo.
 echo # Microservice URLs for Transactions to communicate with
-echo ACCOUNTS_SERVICE_URL=!ACCOUNTS_SERVICE_URL!
+echo ACCOUNTS_SERVICE_URL=http://accounts-service:!ACCOUNTS_SERVICE_PORT!
 echo.
 ) > "%PROJECT_ROOT%\Transactions\.env"
 
@@ -108,18 +108,13 @@ echo.
 echo # Server Configuration
 echo SERVER_PORT=!BFF_SERVICE_PORT!
 echo.
-echo # Database Configuration ^(using transactions DB^)
-echo DATABASE_URL=jdbc:mysql://!MYSQL_HOST!:!MYSQL_PORT!/!TRANSACTIONS_DB_NAME!
-echo DATABASE_USERNAME=!DATABASE_USERNAME!
-echo DATABASE_PASSWORD=!BFF_DB_PASSWORD!
-echo.
 echo # Kafka Configuration
 echo KAFKA_BOOTSTRAP_SERVERS=!KAFKA_BOOTSTRAP_SERVERS!
 echo.
 echo # Microservice URLs for BFF to communicate with
-echo USER_SERVICE_URL=!USERS_SERVICE_URL!
-echo ACCOUNT_SERVICE_URL=!ACCOUNTS_SERVICE_URL!
-echo TRANSACTION_SERVICE_URL=!TRANSACTIONS_SERVICE_URL!
+echo USER_SERVICE_URL=http://users-service:!USERS_SERVICE_PORT!
+echo ACCOUNT_SERVICE_URL=http://accounts-service:!ACCOUNTS_SERVICE_PORT!
+echo TRANSACTION_SERVICE_URL=http://transactions-service:!TRANSACTIONS_SERVICE_PORT!
 ) > "%PROJECT_ROOT%\BFF\.env"
 
 echo.
