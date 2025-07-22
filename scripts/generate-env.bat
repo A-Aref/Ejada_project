@@ -73,6 +73,10 @@ echo DATABASE_PASSWORD=!ACCOUNTS_DB_PASSWORD!
 echo.
 echo # Kafka Configuration
 echo KAFKA_BOOTSTRAP_SERVERS=!KAFKA_BOOTSTRAP_SERVERS!
+echo.
+echo # Microservice URLs for Accounts to communicate with
+echo TRANSACTION_SERVICE_URL=!TRANSACTIONS_SERVICE_URL!
+echo.
 ) > "%PROJECT_ROOT%\Accounts\.env"
 
 echo Creating Transactions/.env...
@@ -90,6 +94,10 @@ echo DATABASE_PASSWORD=!TRANSACTIONS_DB_PASSWORD!
 echo.
 echo # Kafka Configuration
 echo KAFKA_BOOTSTRAP_SERVERS=!KAFKA_BOOTSTRAP_SERVERS!
+echo.
+echo # Microservice URLs for Transactions to communicate with
+echo ACCOUNTS_SERVICE_URL=!ACCOUNTS_SERVICE_URL!
+echo.
 ) > "%PROJECT_ROOT%\Transactions\.env"
 
 echo Creating BFF/.env...

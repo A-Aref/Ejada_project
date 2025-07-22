@@ -1,4 +1,3 @@
-version: '3.8'
 
 # This docker-compose.yml uses environment variables from .env file
 # Make sure to run from the project root where .env file is located
@@ -8,7 +7,7 @@ services:
   kafka:
     image: apache/kafka:latest
     hostname: kafka
-    container_name: kafka
+    container_name: ejada-kafka
     ports:
       - '${KAFKA_PORT}:9092'
     environment:
@@ -26,7 +25,7 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
     healthcheck:
-      test: ["CMD", "bash", "-c", "kafka-topics --bootstrap-server kafka:19092 --list"]
+      test: ["CMD", "bash", "-c", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:19092 --list"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -38,7 +37,7 @@ services:
   # Make sure your host MySQL is accessible and has the required databases
 
   wso2-api-manager:
-    image: wso2/wso2am:4.2.0
+    image: wso2/wso2am:4.4.0
     container_name: ejada-api-manager
     ports:
       - "${WSO2_HTTPS_PORT}:9443"  # Management Console
@@ -47,7 +46,7 @@ services:
     environment:
       - JAVA_OPTS=-Xms512m -Xmx1024m
     volumes:
-      - wso2am_data:/home/wso2carbon/wso2am-4.2.0/repository/deployment
+      - wso2am_data:/home/wso2carbon/wso2am-4.4.0/repository/deployment
     healthcheck:
       test: ["CMD", "curl", "-f", "https://localhost:9443/carbon/admin/login.jsp", "-k"]
       interval: 30s
@@ -60,18 +59,18 @@ services:
   # Microservices
   users-service:
     build:
-      context: ./Users
+      context: ../Users
       dockerfile: Dockerfile
     container_name: ejada-users-service
     ports:
       - "${USERS_SERVICE_PORT}:${USERS_SERVICE_PORT}"
     env_file:
-      - ./Users/.env
+      - ../Users/.env
     depends_on:
       kafka:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${USERS_SERVICE_PORT}/actuator/health"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:${USERS_SERVICE_PORT}/actuator/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -81,18 +80,18 @@ services:
 
   logging-service:
     build:
-      context: ./Logging
+      context: ../Logging
       dockerfile: Dockerfile
     container_name: ejada-logging-service
     ports:
       - "${LOGGING_SERVICE_PORT}:${LOGGING_SERVICE_PORT}"
     env_file:
-      - ./Logging/.env
+      - ../Logging/.env
     depends_on:
       kafka:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${LOGGING_SERVICE_PORT}/actuator/health"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:${LOGGING_SERVICE_PORT}/actuator/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -102,18 +101,18 @@ services:
 
   accounts-service:
     build:
-      context: ./Accounts
+      context: ../Accounts
       dockerfile: Dockerfile
     container_name: ejada-accounts-service
     ports:
       - "${ACCOUNTS_SERVICE_PORT}:${ACCOUNTS_SERVICE_PORT}"
     env_file:
-      - ./Accounts/.env
+      - ../Accounts/.env
     depends_on:
       kafka:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${ACCOUNTS_SERVICE_PORT}/actuator/health"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:${ACCOUNTS_SERVICE_PORT}/actuator/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -123,18 +122,18 @@ services:
 
   transactions-service:
     build:
-      context: ./Transactions
+      context: ../Transactions
       dockerfile: Dockerfile
     container_name: ejada-transactions-service
     ports:
       - "${TRANSACTIONS_SERVICE_PORT}:${TRANSACTIONS_SERVICE_PORT}"
     env_file:
-      - ./Transactions/.env
+      - ../Transactions/.env
     depends_on:
       kafka:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${TRANSACTIONS_SERVICE_PORT}/actuator/health"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:${TRANSACTIONS_SERVICE_PORT}/actuator/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -144,13 +143,13 @@ services:
 
   bff-service:
     build:
-      context: ./BFF
+      context: ../BFF
       dockerfile: Dockerfile
     container_name: ejada-bff-service
     ports:
       - "${BFF_SERVICE_PORT}:${BFF_SERVICE_PORT}"
     env_file:
-      - ./BFF/.env
+      - ../BFF/.env
     depends_on:
       kafka:
         condition: service_healthy
@@ -161,7 +160,7 @@ services:
       transactions-service:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${BFF_SERVICE_PORT}/actuator/health"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:${BFF_SERVICE_PORT}/actuator/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
