@@ -1,9 +1,12 @@
 package com.ejada.bff.service;
 
 import com.ejada.bff.dto.*;
+import com.ejada.bff.exception.UserNotFoundException;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,6 +29,14 @@ public class BffService {
         return userWebClient.get()
                 .uri("/users/{userId}/profile", userId)
                 .retrieve()
+                .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(), response -> {
+                    if (response.statusCode() == HttpStatus.NOT_FOUND) {
+                        return response.bodyToMono(String.class)
+                                .map(body -> new UserNotFoundException("User with ID " + userId + " not found."));
+                    }
+                    return response.bodyToMono(String.class)
+                            .map(body -> new RuntimeException( "Failed to retrieve dashboard data due to an issue with downstream services."));
+                })
                 .bodyToMono(UserProfile.class)
                 .block();
     }
@@ -33,6 +44,9 @@ public class BffService {
         return accountWebClient.get()
                 .uri("/accounts/users/{userId}", userId)
                 .retrieve()
+                .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(),
+                        response -> response.bodyToMono(String.class)
+                                .map(body -> new RuntimeException( "Failed to retrieve dashboard data due to an issue with downstream services.")))
                 .bodyToMono(UserAccounts.class)
                 .block();
     }
@@ -40,6 +54,9 @@ public class BffService {
         return transactionWebClient.get()
                 .uri("/transactions/accounts/{accountId}", accountId)
                 .retrieve()
+                .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(),
+                        response -> response.bodyToMono(String.class)
+                                .map(body -> new RuntimeException( "Failed to retrieve dashboard data due to an issue with downstream services.")))
                 .bodyToMono(AccountTransactions.class)
                 .block();
     }
@@ -47,7 +64,7 @@ public class BffService {
         UserProfile userProfile = getUserProfile(userId);
         UserAccounts userAccounts = getUserAccounts(userId);
 
-        List<AccountWithTransactions> detailedAccounts = userAccounts.getAccounts().stream()
+        List<AccountWithTransactions> detailedAccounts = !userAccounts.getAccounts().isEmpty()?userAccounts.getAccounts().stream()
                 .map(account -> {
                     AccountTransactions transactions = getAccountTransactions(account.getAccountId());
                     return new AccountWithTransactions(
@@ -59,7 +76,7 @@ public class BffService {
                             transactions.getTransactions()
                     );
                 })
-                .toList();
+                .toList():new ArrayList<>();
 
         return new DashboardResponse(
                 userProfile.getUserId(),

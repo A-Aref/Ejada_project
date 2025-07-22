@@ -1,10 +1,12 @@
 package com.ejada.bff.controller;
 
 import com.ejada.bff.dto.DashboardResponse;
+import com.ejada.bff.exception.UserNotFoundException;
 import com.ejada.bff.service.BffService;
 import com.ejada.bff.service.KafkaProducerService;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,11 +30,31 @@ public class BffController {
     }
 
     @GetMapping("/dashboard/{userId}")
-    public ResponseEntity<DashboardResponse> getUserDashboard(@PathVariable UUID userId) {
+    public ResponseEntity<?> getUserDashboard(@PathVariable UUID userId) {
         //TODO: Add body to the request
+
         kafkaProducerService.sendMessage(null, "Request");
-        DashboardResponse dashboard = bffService.getDashboard(userId);
-        kafkaProducerService.sendMessage(Map.of("response",dashboard), "Response");
-        return ResponseEntity.ok(dashboard);
+        try{
+            DashboardResponse dashboard = bffService.getDashboard(userId);
+            kafkaProducerService.sendMessage(Map.of("response",dashboard), "Response");
+            return ResponseEntity.ok(dashboard);
+        }
+        catch(UserNotFoundException e){
+            Map<String, Object> errorResponse = Map.of(
+                    "status", 404,
+                    "error", "Not Found",
+                    "message", e.getMessage());
+            kafkaProducerService.sendMessage(errorResponse, "Response");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+        }
+        catch(Exception e){
+            Map<String, Object> errorResponse = Map.of(
+                    "status", 500,
+                    "error", "Internal Server Error",
+                    "message", e.getMessage());
+            kafkaProducerService.sendMessage(errorResponse, "Response");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+
     }
 }
