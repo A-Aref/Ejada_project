@@ -26,11 +26,30 @@ mysql -u root -p < Databases_Creation.sql
 Ensure the root user (or create a dedicated user) has access to these databases:
 
 ```sql
--- Grant permissions to root user
+-- First, check if root user exists for remote connections
+SELECT user, host FROM mysql.user WHERE user = 'root';
+
+-- If root@'%' doesn't exist, create it first
+CREATE USER IF NOT EXISTS 'root'@'%' IDENTIFIED BY '12345678';
+
+-- Then grant permissions to root user
 GRANT ALL PRIVILEGES ON users_service_db.* TO 'root'@'%';
 GRANT ALL PRIVILEGES ON logging_service_db.* TO 'root'@'%';
 GRANT ALL PRIVILEGES ON account_service_db.* TO 'root'@'%';
 GRANT ALL PRIVILEGES ON transaction_service_db.* TO 'root'@'%';
+FLUSH PRIVILEGES;
+```
+
+**Alternative approach - Create dedicated database users (Recommended for security):**
+```sql
+-- Create dedicated users for each service
+CREATE USER IF NOT EXISTS 'ejada_user'@'%' IDENTIFIED BY '12345678';
+
+-- Grant specific permissions
+GRANT ALL PRIVILEGES ON users_service_db.* TO 'ejada_user'@'%';
+GRANT ALL PRIVILEGES ON logging_service_db.* TO 'ejada_user'@'%';
+GRANT ALL PRIVILEGES ON account_service_db.* TO 'ejada_user'@'%';
+GRANT ALL PRIVILEGES ON transaction_service_db.* TO 'ejada_user'@'%';
 FLUSH PRIVILEGES;
 ```
 
@@ -99,9 +118,17 @@ The Docker Compose configuration has been updated to:
 4. Test direct connection: `mysql -u root -p -h localhost`
 
 ### Permission Issues
-1. Verify user has privileges: `SHOW GRANTS FOR 'root'@'%';`
-2. Check MySQL user table: `SELECT user, host FROM mysql.user;`
-3. Ensure root user exists for '%' host
+1. **Check current user privileges**: `SELECT current_user();`
+2. **Verify you're logged in as root**: `SELECT user();`
+3. **Check existing users**: `SELECT user, host FROM mysql.user;`
+4. **Verify user has privileges**: `SHOW GRANTS FOR 'root'@'%';`
+5. **If root@'%' doesn't exist**: 
+   ```sql
+   CREATE USER 'root'@'%' IDENTIFIED BY '12345678';
+   GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION;
+   FLUSH PRIVILEGES;
+   ```
+6. **Ensure root user exists for '%' host**
 
 ### Docker Network Issues
 1. Test host.docker.internal resolution from container

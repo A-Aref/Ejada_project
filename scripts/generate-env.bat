@@ -1,9 +1,6 @@
 @echo off
 setlocal enabledelayedexpansion
 
-REM Script to generate individual .env files from master .env
-REM This script reads the master .env file and creates service-specific .env files
-
 echo Generating individual .env files from master .env...
 
 REM Get the script's directory
@@ -37,7 +34,7 @@ echo SERVER_PORT=!USERS_SERVICE_PORT!
 echo.
 echo # Database Configuration
 echo DATABASE_URL=jdbc:mysql://!MYSQL_HOST!:!MYSQL_PORT!/!USERS_DB_NAME!
-echo DATABASE_USERNAME=root
+echo DATABASE_USERNAME=!DATABASE_USERNAME!
 echo DATABASE_PASSWORD=!USERS_DB_PASSWORD!
 echo.
 echo # Kafka Configuration
@@ -54,7 +51,7 @@ echo SERVER_PORT=!LOGGING_SERVICE_PORT!
 echo.
 echo # Database Configuration
 echo DATABASE_URL=jdbc:mysql://!MYSQL_HOST!:!MYSQL_PORT!/!LOGGING_DB_NAME!
-echo DATABASE_USERNAME=root
+echo DATABASE_USERNAME=!DATABASE_USERNAME!
 echo DATABASE_PASSWORD=!LOGGING_DB_PASSWORD!
 echo.
 echo # Kafka Configuration
@@ -71,7 +68,7 @@ echo SERVER_PORT=!ACCOUNTS_SERVICE_PORT!
 echo.
 echo # Database Configuration
 echo DATABASE_URL=jdbc:mysql://!MYSQL_HOST!:!MYSQL_PORT!/!ACCOUNTS_DB_NAME!
-echo DATABASE_USERNAME=root
+echo DATABASE_USERNAME=!DATABASE_USERNAME!
 echo DATABASE_PASSWORD=!ACCOUNTS_DB_PASSWORD!
 echo.
 echo # Kafka Configuration
@@ -88,7 +85,7 @@ echo SERVER_PORT=!TRANSACTIONS_SERVICE_PORT!
 echo.
 echo # Database Configuration
 echo DATABASE_URL=jdbc:mysql://!MYSQL_HOST!:!MYSQL_PORT!/!TRANSACTIONS_DB_NAME!
-echo DATABASE_USERNAME=root
+echo DATABASE_USERNAME=!DATABASE_USERNAME!
 echo DATABASE_PASSWORD=!TRANSACTIONS_DB_PASSWORD!
 echo.
 echo # Kafka Configuration
@@ -103,9 +100,9 @@ echo.
 echo # Server Configuration
 echo SERVER_PORT=!BFF_SERVICE_PORT!
 echo.
-echo # Database Configuration (using transactions DB^)
+echo # Database Configuration ^(using transactions DB^)
 echo DATABASE_URL=jdbc:mysql://!MYSQL_HOST!:!MYSQL_PORT!/!TRANSACTIONS_DB_NAME!
-echo DATABASE_USERNAME=root
+echo DATABASE_USERNAME=!DATABASE_USERNAME!
 echo DATABASE_PASSWORD=!BFF_DB_PASSWORD!
 echo.
 echo # Kafka Configuration
@@ -117,18 +114,6 @@ echo ACCOUNT_SERVICE_URL=!ACCOUNTS_SERVICE_URL!
 echo TRANSACTION_SERVICE_URL=!TRANSACTIONS_SERVICE_URL!
 ) > "%PROJECT_ROOT%\BFF\.env"
 
-echo Creating WebUI/VBank/.env...
-(
-echo # WebUI Environment Configuration
-echo # Generated from master .env file
-echo.
-echo # Server Configuration
-echo PORT=!WEBUI_PORT!
-echo.
-echo # API Endpoints
-echo REACT_APP_BFF_BASE_URL=http://localhost:!BFF_SERVICE_PORT!
-) > "%PROJECT_ROOT%\WebUI\VBank\.env"
-
 echo.
 echo ✅ All .env files generated successfully!
 echo.
@@ -138,6 +123,5 @@ echo   - Logging/.env
 echo   - Accounts/.env
 echo   - Transactions/.env
 echo   - BFF/.env
-echo   - WebUI/VBank/.env
 echo.
 echo Note: These files are automatically used by Docker Compose.

@@ -7,7 +7,7 @@ This Docker Compose configuration sets up the complete Ejada banking system with
 The system consists of the following components:
 
 ### Infrastructure Services
-- **Apache Kafka** (with Zookeeper) - Message broker for microservices communication
+- **Apache Kafka** - Message broker for microservices communication
 - **MySQL Database** - Shared database for all microservices
 - **WSO2 API Manager** - API gateway and management
 

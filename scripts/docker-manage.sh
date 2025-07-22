@@ -11,6 +11,19 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Get the script's directory and project root
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+CONFIG_ENV="$PROJECT_ROOT/config/.env"
+
+# Load environment variables from master .env file
+if [ -f "$CONFIG_ENV" ]; then
+    source "$CONFIG_ENV"
+else
+    echo -e "${RED}[ERROR]${NC} Master .env file not found at: $CONFIG_ENV"
+    exit 1
+fi
+
 # Function to print colored output
 print_status() {
     echo -e "${GREEN}[INFO]${NC} $1"
@@ -48,58 +61,57 @@ start_all() {
     check_docker
     check_memory
     
-    cd ../config && docker-compose up -d
+    cd "$PROJECT_ROOT/config" && docker-compose up -d
     
     print_status "Services are starting up. This may take a few minutes..."
     print_status "You can monitor the progress with: docker-compose logs -f"
     
     echo ""
     echo -e "${BLUE}Service URLs:${NC}"
-    echo "  WebUI:                 http://localhost:3000"
-    echo "  BFF Service:           http://localhost:8084"
-    echo "  Users Service:         http://localhost:8080"
-    echo "  Logging Service:       http://localhost:8081"
-    echo "  Accounts Service:      http://localhost:8082"
-    echo "  Transactions Service:  http://localhost:8083"
-    echo "  WSO2 API Manager:      https://localhost:9443/carbon (admin/admin)"
-    echo "  WSO2 Gateway:          http://localhost:8280"
+    echo "  BFF Service:           http://localhost:${BFF_SERVICE_PORT}"
+    echo "  Users Service:         http://localhost:${USERS_SERVICE_PORT}"
+    echo "  Logging Service:       http://localhost:${LOGGING_SERVICE_PORT}"
+    echo "  Accounts Service:      http://localhost:${ACCOUNTS_SERVICE_PORT}"
+    echo "  Transactions Service:  http://localhost:${TRANSACTIONS_SERVICE_PORT}"
+    echo "  WSO2 API Manager:      https://localhost:${WSO2_HTTPS_PORT}/carbon (admin/admin)"
+    echo "  WSO2 Gateway:          http://localhost:${WSO2_HTTP_PORT}"
 }
 
 # Function to stop all services
 stop_all() {
     print_status "Stopping all services..."
-    cd ../config && docker-compose down
+    cd "$PROJECT_ROOT/config" && docker-compose down
     print_status "All services stopped."
 }
 
 # Function to restart all services
 restart_all() {
     print_status "Restarting all services..."
-    cd ../config && docker-compose restart
+    cd "$PROJECT_ROOT/config" && docker-compose restart
     print_status "All services restarted."
 }
 
 # Function to show service status
 status() {
     print_status "Service status:"
-    cd ../config && docker-compose ps
+    cd "$PROJECT_ROOT/config" && docker-compose ps
 }
 
 # Function to show logs
 logs() {
     if [ -z "$1" ]; then
         print_status "Showing logs for all services..."
-        cd ../config && docker-compose logs -f
+        cd "$PROJECT_ROOT/config" && docker-compose logs -f
     else
         print_status "Showing logs for $1..."
-        cd ../config && docker-compose logs -f "$1"
+        cd "$PROJECT_ROOT/config" && docker-compose logs -f "$1"
     fi
 }
 
 # Function to build all images
 build() {
     print_status "Building all Docker images..."
-    cd ../config && docker-compose build --no-cache
+    cd "$PROJECT_ROOT/config" && docker-compose build --no-cache
     print_status "Build completed."
 }
 
@@ -109,7 +121,7 @@ cleanup() {
     read -r response
     if [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]; then
         print_status "Cleaning up..."
-        cd ../config && docker-compose down -v --rmi all
+        cd "$PROJECT_ROOT/config" && docker-compose down -v --rmi all
         print_status "Cleanup completed."
     else
         print_status "Cleanup cancelled."
@@ -122,16 +134,16 @@ health_check() {
     
     services=("users-service" "logging-service" "accounts-service" "transactions-service" "bff-service")
     
-    cd ../config
+    cd "$PROJECT_ROOT/config"
     for service in "${services[@]}"; do
         if docker-compose ps | grep -q "$service.*Up"; then
             port=""
             case $service in
-                "users-service") port="8080" ;;
-                "logging-service") port="8081" ;;
-                "accounts-service") port="8082" ;;
-                "transactions-service") port="8083" ;;
-                "bff-service") port="8084" ;;
+                "users-service") port="$USERS_SERVICE_PORT" ;;
+                "logging-service") port="$LOGGING_SERVICE_PORT" ;;
+                "accounts-service") port="$ACCOUNTS_SERVICE_PORT" ;;
+                "transactions-service") port="$TRANSACTIONS_SERVICE_PORT" ;;
+                "bff-service") port="$BFF_SERVICE_PORT" ;;
             esac
             
             if curl -f -s http://localhost:$port/actuator/health > /dev/null; then

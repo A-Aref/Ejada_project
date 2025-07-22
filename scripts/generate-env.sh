@@ -41,7 +41,7 @@ SERVER_PORT=${USERS_SERVICE_PORT}
 
 # Database Configuration
 DATABASE_URL=jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}/${USERS_DB_NAME}
-DATABASE_USERNAME=root
+DATABASE_USERNAME=${DATABASE_USERNAME}
 DATABASE_PASSWORD=${USERS_DB_PASSWORD}
 
 # Kafka Configuration
@@ -61,7 +61,7 @@ SERVER_PORT=${LOGGING_SERVICE_PORT}
 
 # Database Configuration
 DATABASE_URL=jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}/${LOGGING_DB_NAME}
-DATABASE_USERNAME=root
+DATABASE_USERNAME=${DATABASE_USERNAME}
 DATABASE_PASSWORD=${LOGGING_DB_PASSWORD}
 
 # Kafka Configuration
@@ -81,7 +81,7 @@ SERVER_PORT=${ACCOUNTS_SERVICE_PORT}
 
 # Database Configuration
 DATABASE_URL=jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}/${ACCOUNTS_DB_NAME}
-DATABASE_USERNAME=root
+DATABASE_USERNAME=${DATABASE_USERNAME}
 DATABASE_PASSWORD=${ACCOUNTS_DB_PASSWORD}
 
 # Kafka Configuration
@@ -103,7 +103,7 @@ SERVER_PORT=${TRANSACTIONS_SERVICE_PORT}
 
 # Database Configuration
 DATABASE_URL=jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}/${TRANSACTIONS_DB_NAME}
-DATABASE_USERNAME=root
+DATABASE_USERNAME=${DATABASE_USERNAME}
 DATABASE_PASSWORD=${TRANSACTIONS_DB_PASSWORD}
 
 # Kafka Configuration
@@ -125,7 +125,7 @@ SERVER_PORT=${BFF_SERVICE_PORT}
 
 # Database Configuration (using transactions DB)
 DATABASE_URL=jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}/${TRANSACTIONS_DB_NAME}
-DATABASE_USERNAME=root
+DATABASE_USERNAME=${DATABASE_USERNAME}
 DATABASE_PASSWORD=${BFF_DB_PASSWORD}
 
 # Kafka Configuration
@@ -138,28 +138,12 @@ TRANSACTION_SERVICE_URL=${TRANSACTIONS_SERVICE_URL}
 EOF
 }
 
-# Function to create WebUI .env
-create_webui_env() {
-    echo -e "${GREEN}Creating WebUI/VBank/.env...${NC}"
-    cat > "$PROJECT_ROOT/WebUI/VBank/.env" << EOF
-# WebUI Environment Configuration
-# Generated from master .env file
-
-# Server Configuration
-PORT=${WEBUI_PORT}
-
-# API Endpoints
-REACT_APP_BFF_BASE_URL=http://localhost:${BFF_SERVICE_PORT}
-EOF
-}
-
 # Create all .env files
 create_users_env
 create_logging_env
 create_accounts_env
 create_transactions_env
 create_bff_env
-create_webui_env
 
 echo -e "${BLUE}✅ All .env files generated successfully!${NC}"
 echo ""
@@ -169,6 +153,5 @@ echo "  - Logging/.env"
 echo "  - Accounts/.env"
 echo "  - Transactions/.env"
 echo "  - BFF/.env"
-echo "  - WebUI/VBank/.env"
 echo ""
 echo -e "${BLUE}Note: These files are automatically used by Docker Compose.${NC}"

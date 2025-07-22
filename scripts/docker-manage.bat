@@ -9,6 +9,24 @@ set "YELLOW=[93m"
 set "BLUE=[94m"
 set "NC=[0m"
 
+REM Get the script's directory and project root
+set "SCRIPT_DIR=%~dp0"
+set "PROJECT_ROOT=%SCRIPT_DIR%.."
+set "CONFIG_ENV=%PROJECT_ROOT%\config\.env"
+
+REM Load environment variables from master .env file
+if not exist "%CONFIG_ENV%" (
+    echo %RED%[ERROR]%NC% Master .env file not found at: %CONFIG_ENV%
+    exit /b 1
+)
+
+REM Read master .env file and set variables
+for /f "usebackq tokens=1,2 delims==" %%A in ("%CONFIG_ENV%") do (
+    if not "%%A"=="" if not "%%A:~0,1%"=="#" (
+        set "%%A=%%B"
+    )
+)
+
 REM Function to print colored output
 :print_status
 echo %GREEN%[INFO]%NC% %~1
@@ -36,7 +54,7 @@ REM Function to start all services
 call :print_status "Starting all Ejada Banking System services..."
 call :check_docker
 
-cd /d "%~dp0..\config"
+cd /d "%PROJECT_ROOT%\config"
 docker-compose up -d
 
 call :print_status "Services are starting up. This may take a few minutes..."
@@ -44,20 +62,19 @@ call :print_status "You can monitor the progress with: docker-compose logs -f"
 
 echo.
 echo %BLUE%Service URLs:%NC%
-echo   WebUI:                 http://localhost:3000
-echo   BFF Service:           http://localhost:8084
-echo   Users Service:         http://localhost:8080
-echo   Logging Service:       http://localhost:8081
-echo   Accounts Service:      http://localhost:8082
-echo   Transactions Service:  http://localhost:8083
-echo   WSO2 API Manager:      https://localhost:9443/carbon (admin/admin)
-echo   WSO2 Gateway:          http://localhost:8280
+echo   BFF Service:           http://localhost:!BFF_SERVICE_PORT!
+echo   Users Service:         http://localhost:!USERS_SERVICE_PORT!
+echo   Logging Service:       http://localhost:!LOGGING_SERVICE_PORT!
+echo   Accounts Service:      http://localhost:!ACCOUNTS_SERVICE_PORT!
+echo   Transactions Service:  http://localhost:!TRANSACTIONS_SERVICE_PORT!
+echo   WSO2 API Manager:      https://localhost:!WSO2_HTTPS_PORT!/carbon (admin/admin)
+echo   WSO2 Gateway:          http://localhost:!WSO2_HTTP_PORT!
 goto :eof
 
 REM Function to stop all services
 :stop_all
 call :print_status "Stopping all services..."
-cd /d "%~dp0..\config"
+cd /d "%PROJECT_ROOT%\config"
 docker-compose down
 call :print_status "All services stopped."
 goto :eof
@@ -65,7 +82,7 @@ goto :eof
 REM Function to restart all services
 :restart_all
 call :print_status "Restarting all services..."
-cd /d "%~dp0..\config"
+cd /d "%PROJECT_ROOT%\config"
 docker-compose restart
 call :print_status "All services restarted."
 goto :eof
@@ -73,12 +90,13 @@ goto :eof
 REM Function to show service status
 :status
 call :print_status "Service status:"
-cd /d "%~dp0..\config"
+cd /d "%PROJECT_ROOT%\config"
 docker-compose ps
 goto :eof
 
 REM Function to show logs
 :logs
+cd /d "%PROJECT_ROOT%\config"
 if "%~1"=="" (
     call :print_status "Showing logs for all services..."
     docker-compose logs -f
@@ -91,6 +109,7 @@ goto :eof
 REM Function to build all images
 :build
 call :print_status "Building all Docker images..."
+cd /d "%PROJECT_ROOT%\config"
 docker-compose build --no-cache
 call :print_status "Build completed."
 goto :eof
@@ -101,6 +120,7 @@ call :print_warning "This will remove all containers, volumes, and images. Are y
 set /p response=
 if /i "!response!"=="y" (
     call :print_status "Cleaning up..."
+    cd /d "%PROJECT_ROOT%\config"
     docker-compose down -v --rmi all
     call :print_status "Cleanup completed."
 ) else (
@@ -112,16 +132,17 @@ REM Function to run health checks
 :health_check
 call :print_status "Running health checks..."
 
+cd /d "%PROJECT_ROOT%\config"
 set services=users-service logging-service accounts-service transactions-service bff-service
 for %%s in (%services%) do (
     docker-compose ps | findstr "%%s.*Up" >nul
     if !errorlevel! equ 0 (
         set port=
-        if "%%s"=="users-service" set port=8080
-        if "%%s"=="logging-service" set port=8081
-        if "%%s"=="accounts-service" set port=8082
-        if "%%s"=="transactions-service" set port=8083
-        if "%%s"=="bff-service" set port=8084
+        if "%%s"=="users-service" set port=!USERS_SERVICE_PORT!
+        if "%%s"=="logging-service" set port=!LOGGING_SERVICE_PORT!
+        if "%%s"=="accounts-service" set port=!ACCOUNTS_SERVICE_PORT!
+        if "%%s"=="transactions-service" set port=!TRANSACTIONS_SERVICE_PORT!
+        if "%%s"=="bff-service" set port=!BFF_SERVICE_PORT!
         
         curl -f -s http://localhost:!port!/actuator/health >nul 2>&1
         if !errorlevel! equ 0 (
