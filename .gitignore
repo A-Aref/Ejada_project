@@ -1,0 +1,14 @@
+# Environment Variables
+.env
+.env.local
+.env.development
+.env.production
+config/.env
+
+# IDE files
+.vscode/
+.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db
