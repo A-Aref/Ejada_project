@@ -1,0 +1,190 @@
+version: '3.8'
+
+services:
+  # Infrastructure Services
+  kafka:
+    image: apache/kafka:latest
+    hostname: kafka
+    container_name: kafka
+    ports:
+      - '9092:9092'
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT_HOST://localhost:9092,PLAINTEXT://kafka:19092'
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:19093'
+      KAFKA_LISTENERS: 'CONTROLLER://kafka:19093,PLAINTEXT://kafka:19092,PLAINTEXT_HOST://0.0.0.0:9092'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
+    healthcheck:
+      test: ["CMD", "bash", "-c", "kafka-topics --bootstrap-server kafka:19092 --list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ejada-network
+
+  # MySQL is running on host machine
+  # No MySQL container needed - using host MySQL instance
+  # Make sure your host MySQL is accessible and has the required databases
+
+  wso2-api-manager:
+    image: wso2/wso2am:4.2.0
+    container_name: ejada-api-manager
+    ports:
+      - "9443:9443"  # Management Console
+      - "8280:8280"  # HTTP Gateway
+      - "8243:8243"  # HTTPS Gateway
+    environment:
+      - JAVA_OPTS=-Xms512m -Xmx1024m
+    volumes:
+      - wso2am_data:/home/wso2carbon/wso2am-4.2.0/repository/deployment
+    healthcheck:
+      test: ["CMD", "curl", "-f", "https://localhost:9443/carbon/admin/login.jsp", "-k"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+    networks:
+      - ejada-network
+
+  # Microservices
+  users-service:
+    build:
+      context: ./Users
+      dockerfile: Dockerfile
+    container_name: ejada-users-service
+    ports:
+      - "8080:8080"
+    env_file:
+      - ./Users/.env
+    depends_on:
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - ejada-network
+
+  logging-service:
+    build:
+      context: ./Logging
+      dockerfile: Dockerfile
+    container_name: ejada-logging-service
+    ports:
+      - "8081:8081"
+    env_file:
+      - ./Logging/.env
+    depends_on:
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - ejada-network
+
+  accounts-service:
+    build:
+      context: ./Accounts
+      dockerfile: Dockerfile
+    container_name: ejada-accounts-service
+    ports:
+      - "8082:8082"
+    env_file:
+      - ./Accounts/.env
+    depends_on:
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - ejada-network
+
+  transactions-service:
+    build:
+      context: ./Transactions
+      dockerfile: Dockerfile
+    container_name: ejada-transactions-service
+    ports:
+      - "8083:8083"
+    env_file:
+      - ./Transactions/.env
+    depends_on:
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - ejada-network
+
+  bff-service:
+    build:
+      context: ./BFF
+      dockerfile: Dockerfile
+    container_name: ejada-bff-service
+    ports:
+      - "8084:8084"
+    env_file:
+      - ./BFF/.env
+    depends_on:
+      kafka:
+        condition: service_healthy
+      users-service:
+        condition: service_healthy
+      accounts-service:
+        condition: service_healthy
+      transactions-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - ejada-network
+
+  # Frontend
+  webui:
+    build:
+      context: ./WebUI/VBank
+      dockerfile: Dockerfile
+    container_name: ejada-webui
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./WebUI/VBank/.env
+    depends_on:
+      bff-service:
+        condition: service_healthy
+    networks:
+      - ejada-network
+
+volumes:
+  wso2am_data:
+
+networks:
+  ejada-network:
+    driver: bridge
