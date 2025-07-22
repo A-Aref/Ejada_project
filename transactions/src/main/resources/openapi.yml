@@ -1,0 +1,351 @@
+openapi: 3.0.3
+info:
+  title: Transactions Service API
+  description: |
+    This API manages financial transactions including transfers, deposits, and withdrawals for the banking system.
+    It handles transaction initiation, execution, and transaction history retrieval.
+  version: 1.0.0
+  contact:
+    name: Ejada Development Team
+    email: support@ejada.com
+  license:
+    name: MIT License
+    url: https://choosealicense.com/licenses/mit/
+
+servers:
+  - url: http://localhost:8083
+    description: Development server
+
+paths:
+  /transactions/accounts/{accountId}:
+    get:
+      tags:
+        - Transaction History
+      summary: Get transactions for an account
+      description: Retrieves all transactions for a specific account
+      operationId: getAccountTransactions
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          description: The unique identifier of the account
+          schema:
+            type: string
+            format: uuid
+          example: "660e8400-e29b-41d4-a716-446655440001"
+      responses:
+        '200':
+          description: Transactions retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionsResponse'
+              examples:
+                success:
+                  summary: Account transactions
+                  value:
+                    transactions:
+                      - transactionId: "770e8400-e29b-41d4-a716-446655440001"
+                        fromAccountId: "660e8400-e29b-41d4-a716-446655440001"
+                        toAccountId: "660e8400-e29b-41d4-a716-446655440002"
+                        amount: 500.00
+                        status: "SUCCESS"
+                        timestamp: "2025-01-21T10:30:00Z"
+                        type: "TRANSFER"
+        '404':
+          description: No transactions found for this account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                noTransactions:
+                  summary: No transactions found
+                  value:
+                    message: "No transactions found for this account"
+
+  /transactions/accounts/{accountId}/getLatest:
+    get:
+      tags:
+        - Transaction History
+      summary: Get latest transaction for an account
+      description: Retrieves the most recent transaction for a specific account
+      operationId: getLatestTransaction
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          description: The unique identifier of the account
+          schema:
+            type: string
+            format: uuid
+          example: "660e8400-e29b-41d4-a716-446655440001"
+      responses:
+        '200':
+          description: Latest transaction retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionDetails'
+              examples:
+                success:
+                  summary: Latest transaction
+                  value:
+                    transactionId: "770e8400-e29b-41d4-a716-446655440001"
+                    fromAccountId: "660e8400-e29b-41d4-a716-446655440001"
+                    toAccountId: "660e8400-e29b-41d4-a716-446655440002"
+                    amount: 500.00
+                    status: "SUCCESS"
+                    timestamp: "2025-01-21T10:30:00Z"
+                    type: "TRANSFER"
+        '404':
+          description: No transactions found for this account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /transactions/transfer/initiation:
+    post:
+      tags:
+        - Transaction Processing
+      summary: Initiate a transfer transaction
+      description: Initiates a new transfer transaction between two accounts
+      operationId: initiateTransfer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InitiateTransferRequest'
+            examples:
+              example1:
+                summary: Transfer initiation
+                value:
+                  fromAccountId: "660e8400-e29b-41d4-a716-446655440001"
+                  toAccountId: "660e8400-e29b-41d4-a716-446655440002"
+                  amount: 500.00
+                  description: "Monthly transfer"
+      responses:
+        '200':
+          description: Transaction initiated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InitiateTransferResponse'
+              examples:
+                success:
+                  summary: Successful initiation
+                  value:
+                    transactionId: "770e8400-e29b-41d4-a716-446655440001"
+                    status: "PENDING"
+                    timestamp: "2025-01-21T10:30:00Z"
+        '400':
+          description: Invalid transfer request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidAccounts:
+                  summary: Invalid accounts
+                  value:
+                    message: "Invalid accounts"
+                invalidAmount:
+                  summary: Invalid amount
+                  value:
+                    message: "Invalid amount"
+
+  /transactions/transfer/execution:
+    post:
+      tags:
+        - Transaction Processing
+      summary: Execute a pending transfer transaction
+      description: Executes a previously initiated transfer transaction
+      operationId: executeTransfer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecuteTransferRequest'
+            examples:
+              example1:
+                summary: Transfer execution
+                value:
+                  transactionId: "770e8400-e29b-41d4-a716-446655440001"
+      responses:
+        '200':
+          description: Transaction executed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecuteTransferResponse'
+              examples:
+                success:
+                  summary: Successful execution
+                  value:
+                    transactionId: "770e8400-e29b-41d4-a716-446655440001"
+                    status: "SUCCESS"
+                    timestamp: "2025-01-21T10:30:00Z"
+        '400':
+          description: Invalid transaction or execution failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidTransaction:
+                  summary: Invalid transaction
+                  value:
+                    message: "Invalid transaction or already executed"
+                transferFailed:
+                  summary: Transfer failed
+                  value:
+                    message: "Transfer failed due to insufficient funds"
+
+components:
+  schemas:
+    TransactionsResponse:
+      type: object
+      properties:
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransactionDetails'
+          description: List of transactions
+
+    TransactionDetails:
+      type: object
+      properties:
+        transactionId:
+          type: string
+          format: uuid
+          description: Unique identifier for the transaction
+          example: "770e8400-e29b-41d4-a716-446655440001"
+        fromAccountId:
+          type: string
+          format: uuid
+          description: Source account identifier
+          example: "660e8400-e29b-41d4-a716-446655440001"
+        toAccountId:
+          type: string
+          format: uuid
+          description: Destination account identifier
+          example: "660e8400-e29b-41d4-a716-446655440002"
+        amount:
+          type: number
+          format: double
+          description: Transaction amount
+          example: 500.00
+        status:
+          type: string
+          enum: [PENDING, SUCCESS, FAILED, CANCELLED]
+          description: Transaction status
+          example: "SUCCESS"
+        timestamp:
+          type: string
+          format: date-time
+          description: Transaction timestamp
+          example: "2025-01-21T10:30:00Z"
+        type:
+          type: string
+          enum: [TRANSFER, DEPOSIT, WITHDRAWAL]
+          description: Transaction type
+          example: "TRANSFER"
+        description:
+          type: string
+          description: Transaction description (optional)
+          example: "Monthly transfer"
+
+    InitiateTransferRequest:
+      type: object
+      required:
+        - fromAccountId
+        - toAccountId
+        - amount
+      properties:
+        fromAccountId:
+          type: string
+          format: uuid
+          description: Source account identifier
+          example: "660e8400-e29b-41d4-a716-446655440001"
+        toAccountId:
+          type: string
+          format: uuid
+          description: Destination account identifier
+          example: "660e8400-e29b-41d4-a716-446655440002"
+        amount:
+          type: number
+          format: double
+          description: Amount to transfer
+          example: 500.00
+          minimum: 0.01
+        description:
+          type: string
+          description: Transaction description (optional)
+          example: "Monthly transfer"
+          maxLength: 255
+
+    InitiateTransferResponse:
+      type: object
+      properties:
+        transactionId:
+          type: string
+          format: uuid
+          description: Unique identifier for the initiated transaction
+          example: "770e8400-e29b-41d4-a716-446655440001"
+        status:
+          type: string
+          enum: [PENDING]
+          description: Transaction status
+          example: "PENDING"
+        timestamp:
+          type: string
+          format: date-time
+          description: Transaction initiation timestamp
+          example: "2025-01-21T10:30:00Z"
+
+    ExecuteTransferRequest:
+      type: object
+      required:
+        - transactionId
+      properties:
+        transactionId:
+          type: string
+          format: uuid
+          description: Unique identifier of the transaction to execute
+          example: "770e8400-e29b-41d4-a716-446655440001"
+
+    ExecuteTransferResponse:
+      type: object
+      properties:
+        transactionId:
+          type: string
+          format: uuid
+          description: Unique identifier for the executed transaction
+          example: "770e8400-e29b-41d4-a716-446655440001"
+        status:
+          type: string
+          enum: [SUCCESS, FAILED]
+          description: Transaction execution status
+          example: "SUCCESS"
+        timestamp:
+          type: string
+          format: date-time
+          description: Transaction execution timestamp
+          example: "2025-01-21T10:30:00Z"
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Error message
+          example: "Invalid request data"
+
+tags:
+  - name: Transaction History
+    description: Operations for retrieving transaction history
+  - name: Transaction Processing
+    description: Operations for processing financial transactions

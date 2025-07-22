@@ -1,0 +1,232 @@
+openapi: 3.0.3
+info:
+  title: BFF (Backend For Frontend) Service API
+  description: |
+    This API serves as a Backend For Frontend (BFF) layer that aggregates data from multiple microservices
+    to provide optimized endpoints for frontend applications. It combines user, account, and transaction data
+    to create comprehensive dashboards and views.
+  version: 1.0.0
+  contact:
+    name: Ejada Development Team
+    email: support@ejada.com
+  license:
+    name: MIT License
+    url: https://choosealicense.com/licenses/mit/
+
+servers:
+  - url: http://localhost:8084
+    description: Development server
+
+paths:
+  /bff/dashboard/{userId}:
+    get:
+      tags:
+        - Dashboard
+      summary: Get user dashboard data
+      description: |
+        Retrieves comprehensive dashboard data for a user including:
+        - User profile information
+        - All user accounts with balances
+        - Recent transaction history
+        - Account summaries
+      operationId: getUserDashboard
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: The unique identifier of the user
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        '200':
+          description: Dashboard data retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardResponse'
+              examples:
+                success:
+                  summary: User dashboard
+                  value:
+                    user:
+                      userId: "550e8400-e29b-41d4-a716-446655440000"
+                      username: "john_doe"
+                      email: "john.doe@example.com"
+                      firstName: "John"
+                      lastName: "Doe"
+                    accounts:
+                      - accountId: "660e8400-e29b-41d4-a716-446655440001"
+                        accountNumber: "ACC-123456789"
+                        balance: 1500.00
+                        accountType: "SAVINGS"
+                        status: "ACTIVE"
+                      - accountId: "660e8400-e29b-41d4-a716-446655440002"
+                        accountNumber: "ACC-987654321"
+                        balance: 2500.00
+                        accountType: "CHECKING"
+                        status: "ACTIVE"
+                    recentTransactions:
+                      - transactionId: "770e8400-e29b-41d4-a716-446655440001"
+                        fromAccountId: "660e8400-e29b-41d4-a716-446655440001"
+                        toAccountId: "660e8400-e29b-41d4-a716-446655440002"
+                        amount: 500.00
+                        status: "SUCCESS"
+                        timestamp: "2025-01-21T10:30:00Z"
+                        type: "TRANSFER"
+                    totalBalance: 4000.00
+                    accountsCount: 2
+        '404':
+          description: User not found or no data available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                userNotFound:
+                  summary: User not found
+                  value:
+                    message: "User not found"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    DashboardResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/UserProfile'
+        accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountSummary'
+          description: List of user accounts
+        recentTransactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransactionSummary'
+          description: Recent transactions across all accounts
+        totalBalance:
+          type: number
+          format: double
+          description: Total balance across all accounts
+          example: 4000.00
+        accountsCount:
+          type: integer
+          description: Number of accounts owned by the user
+          example: 2
+
+    UserProfile:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+          description: Unique identifier for the user
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        username:
+          type: string
+          description: Username
+          example: "john_doe"
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: "john.doe@example.com"
+        firstName:
+          type: string
+          description: User's first name
+          example: "John"
+        lastName:
+          type: string
+          description: User's last name
+          example: "Doe"
+
+    AccountSummary:
+      type: object
+      properties:
+        accountId:
+          type: string
+          format: uuid
+          description: Unique identifier for the account
+          example: "660e8400-e29b-41d4-a716-446655440001"
+        accountNumber:
+          type: string
+          description: Account number
+          example: "ACC-123456789"
+        balance:
+          type: number
+          format: double
+          description: Current account balance
+          example: 1500.00
+        accountType:
+          type: string
+          enum: [SAVINGS, CHECKING, BUSINESS]
+          description: Type of account
+          example: "SAVINGS"
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE, SUSPENDED, CLOSED]
+          description: Account status
+          example: "ACTIVE"
+
+    TransactionSummary:
+      type: object
+      properties:
+        transactionId:
+          type: string
+          format: uuid
+          description: Unique identifier for the transaction
+          example: "770e8400-e29b-41d4-a716-446655440001"
+        fromAccountId:
+          type: string
+          format: uuid
+          description: Source account identifier
+          example: "660e8400-e29b-41d4-a716-446655440001"
+        toAccountId:
+          type: string
+          format: uuid
+          description: Destination account identifier
+          example: "660e8400-e29b-41d4-a716-446655440002"
+        amount:
+          type: number
+          format: double
+          description: Transaction amount
+          example: 500.00
+        status:
+          type: string
+          enum: [PENDING, SUCCESS, FAILED, CANCELLED]
+          description: Transaction status
+          example: "SUCCESS"
+        timestamp:
+          type: string
+          format: date-time
+          description: Transaction timestamp
+          example: "2025-01-21T10:30:00Z"
+        type:
+          type: string
+          enum: [TRANSFER, DEPOSIT, WITHDRAWAL]
+          description: Transaction type
+          example: "TRANSFER"
+        description:
+          type: string
+          description: Transaction description (optional)
+          example: "Monthly transfer"
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Error message
+          example: "User not found"
+
+tags:
+  - name: Dashboard
+    description: Operations for retrieving aggregated dashboard data from multiple services

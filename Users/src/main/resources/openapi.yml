@@ -1,0 +1,304 @@
+openapi: 3.0.3
+info:
+  title: Users Service API
+  description: |
+    This API manages user registration, authentication, and profile management for the banking system.
+    It handles user creation, login validation, and profile retrieval operations.
+  version: 1.0.0
+  contact:
+    name: Ejada Development Team
+    email: support@ejada.com
+  license:
+    name: MIT License
+    url: https://choosealicense.com/licenses/mit/
+
+servers:
+  - url: http://localhost:8080
+    description: Development server
+
+paths:
+  /users/register:
+    post:
+      tags:
+        - User Management
+      summary: Register a new user
+      description: Creates a new user account with the provided registration details
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            examples:
+              example1:
+                summary: New user registration
+                value:
+                  username: "john_doe"
+                  password: "SecurePassword123!"
+                  email: "john.doe@example.com"
+                  firstName: "John"
+                  lastName: "Doe"
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+              examples:
+                success:
+                  summary: Successful registration
+                  value:
+                    userId: "550e8400-e29b-41d4-a716-446655440000"
+                    username: "john_doe"
+                    message: "User registered successfully."
+        '409':
+          description: User already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                conflict:
+                  summary: Duplicate user
+                  value:
+                    status: 409
+                    error: "Conflict"
+                    message: "User already exists"
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /users/login:
+    post:
+      tags:
+        - User Management
+      summary: User login
+      description: Authenticates a user with username and password
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              example1:
+                summary: User login
+                value:
+                  username: "john_doe"
+                  password: "SecurePassword123!"
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+              examples:
+                success:
+                  summary: Successful login
+                  value:
+                    userId: "550e8400-e29b-41d4-a716-446655440000"
+                    username: "john_doe"
+                    message: "Login successful."
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                unauthorized:
+                  summary: Invalid credentials
+                  value:
+                    status: 401
+                    error: "Unauthorized"
+                    message: "Invalid username or password"
+
+  /users/{userId}/profile:
+    get:
+      tags:
+        - User Management
+      summary: Get user profile
+      description: Retrieves the profile information for a specific user
+      operationId: getUserProfile
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: The unique identifier of the user
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+              examples:
+                success:
+                  summary: User profile
+                  value:
+                    userId: "550e8400-e29b-41d4-a716-446655440000"
+                    username: "john_doe"
+                    email: "john.doe@example.com"
+                    firstName: "John"
+                    lastName: "Doe"
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  summary: User not found
+                  value:
+                    status: 404
+                    error: "Not Found"
+                    message: "User not found"
+
+components:
+  schemas:
+    RegisterRequest:
+      type: object
+      required:
+        - username
+        - password
+        - email
+        - firstName
+        - lastName
+      properties:
+        username:
+          type: string
+          description: Unique username for the user
+          example: "john_doe"
+          minLength: 3
+          maxLength: 50
+        password:
+          type: string
+          description: User's password (minimum 8 characters)
+          example: "SecurePassword123!"
+          minLength: 8
+          format: password
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: "john.doe@example.com"
+        firstName:
+          type: string
+          description: User's first name
+          example: "John"
+          minLength: 1
+          maxLength: 50
+        lastName:
+          type: string
+          description: User's last name
+          example: "Doe"
+          minLength: 1
+          maxLength: 50
+
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          description: Username or email
+          example: "john_doe"
+        password:
+          type: string
+          format: password
+          description: User's password
+          example: "SecurePassword123!"
+
+    RegisterResponse:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+          description: Unique identifier for the newly created user
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        username:
+          type: string
+          description: Username of the registered user
+          example: "john_doe"
+        message:
+          type: string
+          description: Success message
+          example: "User registered successfully."
+
+    LoginResponse:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+          description: Unique identifier for the user
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        username:
+          type: string
+          description: Username of the logged-in user
+          example: "john_doe"
+        message:
+          type: string
+          description: Success message
+          example: "Login successful."
+
+    UserProfile:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+          description: Unique identifier for the user
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        username:
+          type: string
+          description: Username
+          example: "john_doe"
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: "john.doe@example.com"
+        firstName:
+          type: string
+          description: User's first name
+          example: "John"
+        lastName:
+          type: string
+          description: User's last name
+          example: "Doe"
+
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+          description: HTTP status code
+          example: 400
+        error:
+          type: string
+          description: Error type
+          example: "Bad Request"
+        message:
+          type: string
+          description: Error message
+          example: "Invalid request data"
+
+tags:
+  - name: User Management
+    description: Operations related to user registration, authentication, and profile management

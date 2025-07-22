@@ -1,0 +1,197 @@
+openapi: 3.0.3
+info:
+  title: Logging Service API
+  description: |
+    This API manages logging and audit trail for the banking system.
+    It handles the storage and retrieval of system logs, requests, and responses for auditing purposes.
+  version: 1.0.0
+  contact:
+    name: Ejada Development Team
+    email: support@ejada.com
+  license:
+    name: MIT License
+    url: https://choosealicense.com/licenses/mit/
+
+servers:
+  - url: http://localhost:8083
+    description: Development server
+
+paths:
+  /logs:
+    get:
+      tags:
+        - Log Management
+      summary: Retrieve all logs
+      description: Retrieves all system logs including requests and responses
+      operationId: getAllLogs
+      parameters:
+        - name: messageType
+          in: query
+          required: false
+          description: Filter logs by message type
+          schema:
+            type: string
+            enum: [Request, Response]
+          example: "Request"
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of logs to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+          example: 50
+        - name: offset
+          in: query
+          required: false
+          description: Number of logs to skip (for pagination)
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          example: 0
+      responses:
+        '200':
+          description: Logs retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogsResponse'
+              examples:
+                success:
+                  summary: System logs
+                  value:
+                    message: "Logs retrieved successfully"
+                    logs:
+                      - id: 1
+                        message: "User registration request received"
+                        messageType: "Request"
+                        dateTime: "2025-01-21T10:30:00Z"
+                      - id: 2
+                        message: "User registered successfully"
+                        messageType: "Response"
+                        dateTime: "2025-01-21T10:30:01Z"
+        '404':
+          description: No logs found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                noLogs:
+                  summary: No logs found
+                  value:
+                    message: "No logs found"
+
+  /logs/{id}:
+    get:
+      tags:
+        - Log Management
+      summary: Get a specific log entry
+      description: Retrieves a specific log entry by its ID
+      operationId: getLogById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The unique identifier of the log entry
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      responses:
+        '200':
+          description: Log entry retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogEntry'
+              examples:
+                success:
+                  summary: Log entry
+                  value:
+                    id: 1
+                    message: "User registration request received"
+                    messageType: "Request"
+                    dateTime: "2025-01-21T10:30:00Z"
+        '404':
+          description: Log entry not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notFound:
+                  summary: Log not found
+                  value:
+                    message: "Log entry not found"
+
+components:
+  schemas:
+    LogsResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Response message
+          example: "Logs retrieved successfully"
+        logs:
+          type: array
+          items:
+            $ref: '#/components/schemas/LogEntry'
+          description: List of log entries
+
+    LogEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Unique identifier for the log entry
+          example: 1
+        message:
+          type: string
+          description: Log message content
+          example: "User registration request received"
+          maxLength: 1000
+        messageType:
+          type: string
+          enum: [Request, Response]
+          description: Type of log message
+          example: "Request"
+        dateTime:
+          type: string
+          format: date-time
+          description: Timestamp when the log was created
+          example: "2025-01-21T10:30:00Z"
+
+    CreateLogRequest:
+      type: object
+      required:
+        - message
+        - messageType
+      properties:
+        message:
+          type: string
+          description: Log message content
+          example: "User registration request received"
+          maxLength: 1000
+        messageType:
+          type: string
+          enum: [Request, Response]
+          description: Type of log message
+          example: "Request"
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Error message
+          example: "No logs found"
+
+tags:
+  - name: Log Management
+    description: Operations for managing system logs and audit trails

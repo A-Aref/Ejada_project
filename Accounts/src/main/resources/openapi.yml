@@ -1,0 +1,323 @@
+openapi: 3.0.3
+info:
+  title: Accounts Service API
+  description: |
+    This API manages bank accounts creation, retrieval, and account operations for the banking system.
+    It handles account creation, balance management, and money transfers between accounts.
+  version: 1.0.0
+  contact:
+    name: Ejada Development Team
+    email: support@ejada.com
+  license:
+    name: MIT License
+    url: https://choosealicense.com/licenses/mit/
+
+servers:
+  - url: http://localhost:8081
+    description: Development server
+
+paths:
+  /accounts:
+    post:
+      tags:
+        - Account Management
+      summary: Create a new account
+      description: Creates a new bank account for a user
+      operationId: createAccount
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAccountRequest'
+            examples:
+              example1:
+                summary: New savings account
+                value:
+                  userId: "550e8400-e29b-41d4-a716-446655440000"
+                  accountType: "SAVINGS"
+                  initialBalance: 1000.00
+      responses:
+        '201':
+          description: Account created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateAccountResponse'
+              examples:
+                success:
+                  summary: Successful account creation
+                  value:
+                    accountId: "660e8400-e29b-41d4-a716-446655440001"
+                    accountNumber: "ACC-123456789"
+                    message: "Account created successfully"
+        '400':
+          description: Invalid account data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /accounts/{accountId}:
+    get:
+      tags:
+        - Account Management
+      summary: Get account details
+      description: Retrieves detailed information about a specific account
+      operationId: getAccount
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          description: The unique identifier of the account
+          schema:
+            type: string
+            format: uuid
+          example: "660e8400-e29b-41d4-a716-446655440001"
+      responses:
+        '200':
+          description: Account details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountDetails'
+              examples:
+                success:
+                  summary: Account details
+                  value:
+                    accountId: "660e8400-e29b-41d4-a716-446655440001"
+                    accountNumber: "ACC-123456789"
+                    balance: 1500.00
+                    accountType: "SAVINGS"
+                    status: "ACTIVE"
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /accounts/users/{userId}:
+    get:
+      tags:
+        - Account Management
+      summary: Get all accounts for a user
+      description: Retrieves all accounts belonging to a specific user
+      operationId: getUserAccounts
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: The unique identifier of the user
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        '200':
+          description: User accounts retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserAccountsResponse'
+              examples:
+                success:
+                  summary: User accounts
+                  value:
+                    accounts:
+                      - accountId: "660e8400-e29b-41d4-a716-446655440001"
+                        accountNumber: "ACC-123456789"
+                        balance: 1500.00
+                        accountType: "SAVINGS"
+                        status: "ACTIVE"
+                      - accountId: "660e8400-e29b-41d4-a716-446655440002"
+                        accountNumber: "ACC-987654321"
+                        balance: 2500.00
+                        accountType: "CHECKING"
+                        status: "ACTIVE"
+        '404':
+          description: No accounts found for this user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /accounts/transfer:
+    put:
+      tags:
+        - Account Operations
+      summary: Transfer money between accounts
+      description: Transfers a specified amount from one account to another
+      operationId: transferMoney
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferRequest'
+            examples:
+              example1:
+                summary: Account transfer
+                value:
+                  fromAccountId: "660e8400-e29b-41d4-a716-446655440001"
+                  toAccountId: "660e8400-e29b-41d4-a716-446655440002"
+                  amount: 500.00
+      responses:
+        '200':
+          description: Transfer completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransferResponse'
+              examples:
+                success:
+                  summary: Successful transfer
+                  value:
+                    message: "Transfer successful"
+        '400':
+          description: Invalid transfer request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                insufficientFunds:
+                  summary: Insufficient funds
+                  value:
+                    message: "Insufficient funds"
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                accountNotFound:
+                  summary: Account not found
+                  value:
+                    message: "Account not found."
+
+components:
+  schemas:
+    CreateAccountRequest:
+      type: object
+      required:
+        - userId
+        - accountType
+      properties:
+        userId:
+          type: string
+          format: uuid
+          description: Unique identifier of the account owner
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        accountType:
+          type: string
+          enum: [SAVINGS, CHECKING, BUSINESS]
+          description: Type of account to create
+          example: "SAVINGS"
+        initialBalance:
+          type: number
+          format: double
+          description: Initial deposit amount (optional)
+          example: 1000.00
+          minimum: 0
+
+    CreateAccountResponse:
+      type: object
+      properties:
+        accountId:
+          type: string
+          format: uuid
+          description: Unique identifier for the newly created account
+          example: "660e8400-e29b-41d4-a716-446655440001"
+        accountNumber:
+          type: string
+          description: Generated account number
+          example: "ACC-123456789"
+        message:
+          type: string
+          description: Success message
+          example: "Account created successfully"
+
+    AccountDetails:
+      type: object
+      properties:
+        accountId:
+          type: string
+          format: uuid
+          description: Unique identifier for the account
+          example: "660e8400-e29b-41d4-a716-446655440001"
+        accountNumber:
+          type: string
+          description: Account number
+          example: "ACC-123456789"
+        balance:
+          type: number
+          format: double
+          description: Current account balance
+          example: 1500.00
+        accountType:
+          type: string
+          enum: [SAVINGS, CHECKING, BUSINESS]
+          description: Type of account
+          example: "SAVINGS"
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE, SUSPENDED, CLOSED]
+          description: Account status
+          example: "ACTIVE"
+
+    UserAccountsResponse:
+      type: object
+      properties:
+        accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountDetails'
+          description: List of user accounts
+
+    TransferRequest:
+      type: object
+      required:
+        - fromAccountId
+        - toAccountId
+        - amount
+      properties:
+        fromAccountId:
+          type: string
+          format: uuid
+          description: Source account identifier
+          example: "660e8400-e29b-41d4-a716-446655440001"
+        toAccountId:
+          type: string
+          format: uuid
+          description: Destination account identifier
+          example: "660e8400-e29b-41d4-a716-446655440002"
+        amount:
+          type: number
+          format: double
+          description: Amount to transfer
+          example: 500.00
+          minimum: 0.01
+
+    TransferResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Transfer result message
+          example: "Transfer successful"
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Error message
+          example: "Invalid request data"
+
+tags:
+  - name: Account Management
+    description: Operations for creating and managing bank accounts
+  - name: Account Operations
+    description: Operations for account transactions and transfers
