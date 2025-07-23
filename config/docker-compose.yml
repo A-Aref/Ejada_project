@@ -46,6 +46,13 @@ services:
     environment:
       - JAVA_OPTS=-Xms512m -Xmx1024m
     volumes:
+      # Persist API definitions, configurations, and artifacts
+      - wso2am_repository:/home/wso2carbon/wso2am-4.4.0/repository
+      # Persist logs for troubleshooting
+      - wso2am_logs:/home/wso2carbon/wso2am-4.4.0/repository/logs
+      # Persist database (H2 database files if using default H2)
+      - wso2am_database:/home/wso2carbon/wso2am-4.4.0/repository/database
+      # Persist deployment artifacts (keeping original)
       - wso2am_data:/home/wso2carbon/wso2am-4.4.0/repository/deployment
     healthcheck:
       test: ["CMD", "curl", "-f", "https://localhost:9443/carbon/admin/login.jsp", "-k"]
@@ -170,6 +177,9 @@ services:
 
 volumes:
   wso2am_data:
+  wso2am_repository:
+  wso2am_logs:
+  wso2am_database:
 
 networks:
   ejada-network:
