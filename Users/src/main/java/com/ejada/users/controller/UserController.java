@@ -23,7 +23,7 @@ public class UserController {
     private KafkaProducerService kafkaProducerService;
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequest registerRequest) {
+    public ResponseEntity<Map<String, Object>> register(@RequestBody RegisterRequest registerRequest) {
         kafkaProducerService.sendMessage(Map.of("request", registerRequest), "Request");
         UserResponse user = userService.register(registerRequest);
         Map<String, Object> response = Map.of(
@@ -35,7 +35,7 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<Map<String, Object>> login(@RequestBody LoginRequest loginRequest) {
         kafkaProducerService.sendMessage(Map.of("request", loginRequest), "Request");
         UserResponse user = userService.login(loginRequest);
         Map<String, Object> response = Map.of(
@@ -47,7 +47,7 @@ public class UserController {
     }
 
     @GetMapping("/{userId}/profile")
-    public ResponseEntity<?> getProfile(@PathVariable String userId) {
+    public ResponseEntity<Map<String, Object>> getProfile(@PathVariable String userId) {
         kafkaProducerService.sendMessage(null, "Request");
         UserResponse user = userService.getProfile(userId);
         Map<String, Object> response = Map.of(
@@ -57,7 +57,6 @@ public class UserController {
                 "firstName", user.getFirstName(),
                 "lastName", user.getLastName());
         kafkaProducerService.sendMessage(response, "Response");
-        return ResponseEntity.ok(new UserResponse(user.getUserId(), user.getUsername(), user.getEmail(),
-                user.getFirstName(), user.getLastName()));
+        return ResponseEntity.ok(response);
     }
 }

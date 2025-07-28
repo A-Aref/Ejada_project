@@ -30,7 +30,7 @@ public class BffController {
     }
 
     @GetMapping("/dashboard/{userId}")
-    public ResponseEntity<?> getUserDashboard(@PathVariable UUID userId) {
+    public ResponseEntity<DashboardResponse> getUserDashboard(@PathVariable UUID userId) {
         kafkaProducerService.sendMessage(null, "Request");
         DashboardResponse dashboard = bffService.getDashboard(userId);
         kafkaProducerService.sendMessage(Map.of("response",dashboard), "Response");
