@@ -1,11 +1,17 @@
 package com.ejada.accounts.Services.impl;
 
+import java.sql.Timestamp;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import com.ejada.accounts.Models.AccountModel;
 import com.ejada.accounts.Models.AccountStatus;
@@ -14,6 +20,8 @@ import com.ejada.accounts.Services.AccountService;
 import com.ejada.accounts.dto.CreateAccountRequest;
 import com.ejada.accounts.dto.TransferRequest;
 import com.ejada.accounts.dto.TransferResponse;
+import com.ejada.accounts.dto.AccountResponse;
+import com.ejada.accounts.dto.AccountListResponse;
 import com.ejada.accounts.dto.AccountMapper;
 import com.ejada.accounts.exception.AccountNotFoundException;
 import com.ejada.accounts.exception.InsufficientFundsException;
@@ -26,8 +34,11 @@ public class AccountServiceImpl implements AccountService {
     @Autowired
     private AccountRepo accountRepo;
 
+    @Autowired
+    private WebClient webClientTransactions;
+
     @Override
-    public AccountModel createAccount(CreateAccountRequest request) {
+    public AccountResponse createAccount(CreateAccountRequest request) {
         if (request.getUserId() == null || request.getAccountType() == null) {
             throw new InvalidAccountDataException("User ID and account type are required");
         }
@@ -41,18 +52,21 @@ public class AccountServiceImpl implements AccountService {
         account.setAccountType(request.getAccountType());
         account.setBalance(request.getInitialBalance() != null ? request.getInitialBalance() : 0.00);
         
-        return accountRepo.save(account);
+        AccountModel savedAccount = accountRepo.save(account);
+        return AccountMapper.toAccountResponse(savedAccount);
     }
 
     @Override
-    public AccountModel getAccount(UUID accountId) {
-        return accountRepo.findById(accountId)
+    public AccountResponse getAccount(UUID accountId) {
+        AccountModel account = accountRepo.findById(accountId)
             .orElseThrow(() -> new AccountNotFoundException("Account not found with ID: " + accountId));
+        return AccountMapper.toAccountResponse(account);
     }
 
     @Override
-    public List<AccountModel> getAllAccounts(UUID userId) {
-        return accountRepo.findByUserId(userId);
+    public AccountListResponse getAllAccounts(UUID userId) {
+        List<AccountModel> accounts = accountRepo.findByUserId(userId);
+        return AccountMapper.toAccountListResponse(accounts);
     }
 
     @Override
@@ -103,6 +117,35 @@ public class AccountServiceImpl implements AccountService {
             request.getToAccountId(), 
             request.getAmount()
         );
+    }
+
+    @Override
+    public boolean shouldDeactivateAccount(AccountModel account, Timestamp cutoffTime) {
+        // If account is just created, don't deactivate
+        if (account.getCreatedAt().after(cutoffTime)) {
+            return false;
+        }
+        
+        try {
+            ResponseEntity<HashMap<String, Object>> response = webClientTransactions.get()
+                    .uri("/accounts/{accountId}/getLatest", account.getId())
+                    .retrieve()
+                    .toEntity(new ParameterizedTypeReference<HashMap<String, Object>>() {
+                    })
+                    .block();
+            
+            HashMap<String, Object> transaction = response.getBody();
+            
+            if (response.getStatusCode() == HttpStatusCode.valueOf(200) && transaction != null) {
+                Timestamp transactionTimestamp = Timestamp.valueOf((String) transaction.get("timestamp"));
+                return transactionTimestamp.before(cutoffTime);
+            }
+        } catch (Exception e) {
+            // In case of error, don't deactivate the account
+            return false;
+        }
+        
+        return false;
     }
 
 }

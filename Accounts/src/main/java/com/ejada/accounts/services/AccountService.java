@@ -1,20 +1,23 @@
 package com.ejada.accounts.Services;
 
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.UUID;
 import com.ejada.accounts.Models.AccountModel;
 import com.ejada.accounts.dto.CreateAccountRequest;
 import com.ejada.accounts.dto.TransferRequest;
 import com.ejada.accounts.dto.TransferResponse;
+import com.ejada.accounts.dto.AccountResponse;
+import com.ejada.accounts.dto.AccountListResponse;
 
 import jakarta.transaction.Transactional;
 
 public interface AccountService {
-    AccountModel createAccount(CreateAccountRequest request);
+    AccountResponse createAccount(CreateAccountRequest request);
 
-    AccountModel getAccount(UUID accountId);
+    AccountResponse getAccount(UUID accountId);
 
-    List<AccountModel> getAllAccounts(UUID userId);
+    AccountListResponse getAllAccounts(UUID userId);
 
     void setInactive(UUID accountId);
 
@@ -22,4 +25,6 @@ public interface AccountService {
 
     @Transactional
     TransferResponse transferAmount(TransferRequest request);
+
+    boolean shouldDeactivateAccount(AccountModel account, Timestamp cutoffTime);
 }

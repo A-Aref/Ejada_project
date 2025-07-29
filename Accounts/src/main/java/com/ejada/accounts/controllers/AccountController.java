@@ -1,6 +1,5 @@
 package com.ejada.accounts.Controllers;
 
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -11,13 +10,11 @@ import org.springframework.web.bind.annotation.*;
 
 import com.ejada.accounts.Services.AccountService;
 import com.ejada.accounts.Services.KafkaProducerService;
-import com.ejada.accounts.Models.AccountModel;
 import com.ejada.accounts.dto.CreateAccountRequest;
 import com.ejada.accounts.dto.AccountResponse;
 import com.ejada.accounts.dto.AccountListResponse;
 import com.ejada.accounts.dto.TransferRequest;
 import com.ejada.accounts.dto.TransferResponse;
-import com.ejada.accounts.dto.AccountMapper;
 
 import jakarta.validation.Valid;
 
@@ -36,8 +33,7 @@ public class AccountController {
 
         kafkaProducerService.sendMessage(request, "Request");
 
-        AccountModel account = accountService.createAccount(request);
-        AccountResponse response = AccountMapper.toAccountResponse(account);
+        AccountResponse response = accountService.createAccount(request);
 
         kafkaProducerService.sendMessage(response, "Response");
         
@@ -48,8 +44,7 @@ public class AccountController {
     public ResponseEntity<AccountResponse> getAccount(@PathVariable String accountId) {
         kafkaProducerService.sendMessage(Map.of("accountId", accountId), "Request");
         
-        AccountModel account = accountService.getAccount(UUID.fromString(accountId));
-        AccountResponse response = AccountMapper.toAccountResponse(account);
+        AccountResponse response = accountService.getAccount(UUID.fromString(accountId));
         
         kafkaProducerService.sendMessage(response, "Response");
         
@@ -61,8 +56,7 @@ public class AccountController {
 
         kafkaProducerService.sendMessage(Map.of("userId", userId), "Request");
         
-        List<AccountModel> accounts = accountService.getAllAccounts(UUID.fromString(userId));
-        AccountListResponse response = AccountMapper.toAccountListResponse(accounts);
+        AccountListResponse response = accountService.getAllAccounts(UUID.fromString(userId));
         
         kafkaProducerService.sendMessage(response, "Response");
         
