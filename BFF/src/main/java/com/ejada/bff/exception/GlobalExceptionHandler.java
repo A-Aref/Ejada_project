@@ -16,21 +16,15 @@ public class GlobalExceptionHandler {
     private KafkaProducerService kafkaProducerService;
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<Object> handleNotFound(NotFoundException ex) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("status", HttpStatus.NOT_FOUND.value());
-        body.put("error", "User Not Found");
-        body.put("message", ex.getMessage());
-        kafkaProducerService.sendMessage(body, "Response");
-        return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
+        Error error=new Error(HttpStatus.NOT_FOUND.value()+"","User Not Found",ex.getMessage());
+        kafkaProducerService.sendMessage(error, "Response");
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleOtherException(Exception ex) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
-        body.put("error", "Internal Server Error");
-        body.put("message", ex.getMessage());
-        kafkaProducerService.sendMessage(body, "Response");
-        return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
+        Error error=new Error(HttpStatus.INTERNAL_SERVER_ERROR.value()+"","Internal Server Error",ex.getMessage());
+        kafkaProducerService.sendMessage(error, "Response");
+        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

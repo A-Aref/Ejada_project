@@ -21,7 +21,7 @@ public class KafkaProducerService {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public void sendMessage(Map<String, Object> message, String messageType) {
+    public void sendMessage(Object message, String messageType) {
         try {
             if(message == null) {
                 message = new HashMap<>();

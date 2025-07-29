@@ -18,31 +18,29 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<Object> handleUserNotFound(UserNotFoundException ex) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("status", HttpStatus.NOT_FOUND.value());
-        body.put("error", "User Not Found");
-        body.put("message", ex.getMessage());
-        kafkaProducerService.sendMessage(body, "Response");
-        return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
+        Error error=new Error(HttpStatus.NOT_FOUND.value()+"","User Not Found",ex.getMessage());
+        kafkaProducerService.sendMessage(error, "Response");
+        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<Object> handleUnauthorized(UnauthorizedException ex) {
+        Error error=new Error(HttpStatus.UNAUTHORIZED.value()+"","Unauthorized",ex.getMessage());
+        kafkaProducerService.sendMessage(error, "Response");
+        return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
     }
 
     @ExceptionHandler(DuplicateUserException.class)
     public ResponseEntity<Object> handleDuplicateUser(DuplicateUserException ex) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("status", HttpStatus.CONFLICT.value());
-        body.put("error", "Conflict");
-        body.put("message", ex.getMessage());
-        kafkaProducerService.sendMessage(body, "Response");
-        return new ResponseEntity<>(body, HttpStatus.CONFLICT);
+        Error error=new Error(HttpStatus.CONFLICT.value()+"","Conflict",ex.getMessage());
+        kafkaProducerService.sendMessage(error, "Response");
+        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleOtherException(Exception ex) {
-        Map<String, Object> body = new HashMap<>();
-        body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
-        body.put("error", "Internal Server Error");
-        body.put("message", ex.getMessage());
-        kafkaProducerService.sendMessage(body, "Response");
-        return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
+        Error error=new Error(HttpStatus.INTERNAL_SERVER_ERROR.value()+"","Internal Server Error",ex.getMessage());
+        kafkaProducerService.sendMessage(error, "Response");
+        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

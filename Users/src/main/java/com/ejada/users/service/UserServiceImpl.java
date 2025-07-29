@@ -4,6 +4,7 @@ import com.ejada.users.dto.LoginRequest;
 import com.ejada.users.dto.RegisterRequest;
 import com.ejada.users.dto.UserResponse;
 import com.ejada.users.exception.DuplicateUserException;
+import com.ejada.users.exception.UnauthorizedException;
 import com.ejada.users.exception.UserNotFoundException;
 import com.ejada.users.model.UserModel;
 import com.ejada.users.repository.UserRepository;
@@ -41,11 +42,11 @@ public class UserServiceImpl implements UserService{
             UserModel user=userRepository.findByUsername(loginRequest.getUsername());
             if(!passwordEncoder.matches(loginRequest.getPassword(),user.getPassword()))
             {
-                throw new UserNotFoundException("Invalid username or password.");
+                throw new UnauthorizedException("Invalid username or password.");
             }
             return new UserResponse(user.getUserId(),user.getUsername(),user.getEmail(), user.getFirstName(), user.getLastName());
         }
-        throw new UserNotFoundException("Invalid username or password.");
+        throw new UnauthorizedException("Invalid username or password.");
     }
 
     @Override
