@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 import type { Route } from "./+types/account";
+import { api } from "../utils/api";
+import { TransactionForm } from "../components/TransactionForm";
+import { OpenAccountModal } from "../components/OpenAccountModal";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -42,6 +45,8 @@ export default function Account() {
   const [transactions, setTransactions] = useState<Record<string, Transaction[]>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showTransactionForm, setShowTransactionForm] = useState(false);
+  const [showOpenAccountModal, setShowOpenAccountModal] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -54,134 +59,34 @@ export default function Account() {
 
     const parsedUser = JSON.parse(userData);
     setUser(parsedUser);
-    // TODO: Commented out for UI testing
-    // fetchUserProfile(parsedUser.userId);
-    // fetchUserAccounts(parsedUser.userId);
     
-    // Mock data for UI testing
-    setUserProfile({
-      firstName: "John",
-      lastName: "Doe",
-      email: parsedUser.email || "john.doe@example.com",
-      phone: "+1-555-123-4567",
-      address: "123 Main St, City, State 12345"
-    });
-    
-    setAccounts([
-      {
-        accountId: "acc-123",
-        accountNumber: "1234567890",
-        accountType: "CHECKING",
-        balance: 2500.75,
-        status: "ACTIVE"
-      },
-      {
-        accountId: "acc-456", 
-        accountNumber: "0987654321",
-        accountType: "SAVINGS",
-        balance: 15000.00,
-        status: "INACTIVE"
-      }
-    ]);
-    
-    // Mock transaction data
-    setTransactions({
-      "acc-123": [
-        {
-          transactionId: "txn-001",
-          date: "2025-07-20",
-          description: "Online Purchase - Amazon",
-          amount: -89.99,
-          type: "DEBIT",
-          balance: 2500.75
-        },
-        {
-          transactionId: "txn-002",
-          date: "2025-07-19",
-          description: "Salary Deposit",
-          amount: 3500.00,
-          type: "CREDIT",
-          balance: 2590.74
-        },
-        {
-          transactionId: "txn-003",
-          date: "2025-07-18",
-          description: "ATM Withdrawal",
-          amount: -200.00,
-          type: "DEBIT",
-          balance: -909.26
-        },
-        {
-          transactionId: "txn-004",
-          date: "2025-07-17",
-          description: "Grocery Store",
-          amount: -125.50,
-          type: "DEBIT",
-          balance: -709.26
-        }
-      ],
-      "acc-456": [
-        {
-          transactionId: "txn-005",
-          date: "2025-07-15",
-          description: "Interest Payment",
-          amount: 45.50,
-          type: "CREDIT",
-          balance: 15000.00
-        },
-        {
-          transactionId: "txn-006",
-          date: "2025-07-10",
-          description: "Transfer from Checking",
-          amount: 1000.00,
-          type: "CREDIT",
-          balance: 14954.50
-        },
-        {
-          transactionId: "txn-007",
-          date: "2025-07-05",
-          description: "Investment Withdrawal",
-          amount: -500.00,
-          type: "DEBIT",
-          balance: 13954.50
-        }
-      ]
-    });
-    
-    setIsLoading(false);
+    // Fetch dashboard data from WSO2 API
+    fetchDashboardData();
   }, [navigate]);
 
-  const fetchUserProfile = async (userId: string) => {
+  const fetchDashboardData = async () => {
     try {
-      // TODO: Commented out for UI testing
-      // const response = await fetch(`http://localhost:8081/users/${userId}/profile`);
-      // if (response.ok) {
-      //   const profileData = await response.json();
-      //   setUserProfile(profileData);
-      // }
+      const dashboardData = await api.getDashboard();
+      
+      if (dashboardData.profile) {
+        setUserProfile(dashboardData.profile);
+      }
+      
+      if (dashboardData.accounts) {
+        setAccounts(dashboardData.accounts);
+      }
+      
+      if (dashboardData.transactions) {
+        setTransactions(dashboardData.transactions);
+      }
     } catch (err) {
-      console.error("Failed to fetch user profile:", err);
-    }
-  };
-
-  const fetchUserAccounts = async (userId: string) => {
-    try {
-      // TODO: Commented out for UI testing
-      // const response = await fetch(`http://localhost:8082/accounts/users/${userId}`);
-      // if (response.ok) {
-      //   const accountData = await response.json();
-      //   setAccounts(accountData.accounts || []);
-      // } else if (response.status === 404) {
-      //   // No accounts found, which is fine
-      //   setAccounts([]);
-      // }
-    } catch (err) {
-      console.error("Failed to fetch accounts:", err);
-      setError("Failed to load accounts");
+      console.error("Failed to fetch dashboard data:", err);
+      setError("Failed to load dashboard data");
     } finally {
       setIsLoading(false);
     }
   };
+
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -332,9 +237,20 @@ export default function Account() {
                 <h2 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
                   My Accounts
                 </h2>
-                <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium">
-                  Open New Account
-                </button>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => setShowTransactionForm(true)}
+                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                  >
+                    New Transaction
+                  </button>
+                  <button 
+                    onClick={() => setShowOpenAccountModal(true)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                  >
+                    Open New Account
+                  </button>
+                </div>
               </div>
 
               {isLoading ? (
@@ -512,6 +428,31 @@ export default function Account() {
               )}
             </div>
           </div>
+
+          {/* Transaction Form Modal */}
+          {showTransactionForm && (
+            <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+              <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                <TransactionForm
+                  onSuccess={() => {
+                    setShowTransactionForm(false);
+                    fetchDashboardData(); // Refresh data after successful transaction
+                  }}
+                  onCancel={() => setShowTransactionForm(false)}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Open Account Modal */}
+          <OpenAccountModal
+            isOpen={showOpenAccountModal}
+            onClose={() => setShowOpenAccountModal(false)}
+            onSuccess={() => {
+              setShowOpenAccountModal(false);
+              fetchDashboardData(); // Refresh data after successful account opening
+            }}
+          />
         </div>
       </div>
     </div>

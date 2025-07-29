@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import type { Route } from "./+types/login";
+import { api } from "../utils/api";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -37,37 +38,18 @@ export default function Login() {
     setError(null);
 
     try {
-      // TODO: Commented out for UI testing
-      // const response = await fetch("http://localhost:8081/users/login", {
-      //   method: "POST",
-      //   headers: {
-      //     "Content-Type": "application/json",
-      //   },
-      //   body: JSON.stringify(formData),
-      // });
-
-      // if (!response.ok) {
-      //   const errorData = await response.json();
-      //   throw new Error(errorData.message || "Login failed");
-      // }
-
-      // const userData = await response.json();
+      const userData = await api.login(formData.username, formData.password);
       
-      // Mock user data for UI testing
-      const userData = {
-        userId: "test-user-123",
-        username: formData.username,
-        email: formData.username,
-        role: "USER"
-      };
-      
-      // Store user data in localStorage (in a real app, use secure storage)
+      // Store auth token and user data
+      if (userData.token) {
+        localStorage.setItem("authToken", userData.token);
+      }
       localStorage.setItem("user", JSON.stringify(userData));
       
       // Redirect to account page
       navigate("/account");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      setError(err instanceof Error ? err.message : "Login failed");
     } finally {
       setIsLoading(false);
     }

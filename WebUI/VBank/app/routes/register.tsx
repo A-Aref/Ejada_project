@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import type { Route } from "./+types/register";
+import { api } from "../utils/api";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -56,23 +57,14 @@ export default function Register() {
     try {
       const { confirmPassword, ...registrationData } = formData;
       
-      // TODO: Commented out for UI testing
-      // const response = await fetch("http://localhost:8081/users/register", {
-      //   method: "POST",
-      //   headers: {
-      //     "Content-Type": "application/json",
-      //   },
-      //   body: JSON.stringify(registrationData),
-      // });
-
-      // if (!response.ok) {
-      //   const errorData = await response.json();
-      //   throw new Error(errorData.message || "Registration failed");
-      // }
-
-      // const userData = await response.json();
+      await api.register({
+        username: registrationData.username,
+        email: registrationData.email,
+        password: registrationData.password,
+        firstName: registrationData.firstName,
+        lastName: registrationData.lastName
+      });
       
-      // Mock success for UI testing
       setSuccess("Account created successfully! Redirecting to login...");
       
       // Redirect to login page after successful registration
@@ -80,7 +72,7 @@ export default function Register() {
         navigate("/");
       }, 2000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      setError(err instanceof Error ? err.message : "Registration failed");
     } finally {
       setIsLoading(false);
     }
