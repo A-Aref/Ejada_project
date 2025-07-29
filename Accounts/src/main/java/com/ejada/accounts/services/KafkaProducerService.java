@@ -20,7 +20,7 @@ public class KafkaProducerService {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public void sendMessage(HashMap<String, Object> message, String messageType) {
+    public void sendMessage(Object message, String messageType) {
         try {
             String jsonString = objectMapper.writeValueAsString(message);
             log.put("message", jsonString);

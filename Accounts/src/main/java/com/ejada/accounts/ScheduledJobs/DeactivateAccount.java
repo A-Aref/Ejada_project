@@ -1,4 +1,4 @@
-package com.ejada.accounts.Controllers;
+package com.ejada.accounts.ScheduledJobs;
 
 import java.sql.Timestamp;
 import java.time.Instant;
