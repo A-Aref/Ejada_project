@@ -4,7 +4,6 @@ import com.ejada.users.dto.CredintialsResponse;
 import com.ejada.users.dto.LoginRequest;
 import com.ejada.users.dto.RegisterRequest;
 import com.ejada.users.dto.UserResponse;
-import com.ejada.users.model.UserModel;
 import com.ejada.users.service.KafkaProducerService;
 import com.ejada.users.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -2,7 +2,6 @@ package com.ejada.users.service;
 
 import java.time.Instant;
 import java.util.HashMap;
-import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import com.fasterxml.jackson.core.JsonProcessingException;
