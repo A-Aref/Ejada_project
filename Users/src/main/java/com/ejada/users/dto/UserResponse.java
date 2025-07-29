@@ -9,7 +9,7 @@ import java.util.UUID;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Response {
+public class UserResponse {
     private UUID userId;
     private String username;
     private String email;

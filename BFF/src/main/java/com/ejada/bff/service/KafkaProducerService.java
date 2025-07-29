@@ -2,7 +2,6 @@ package com.ejada.bff.service;
 
 import java.time.Instant;
 import java.util.HashMap;
-import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -21,7 +20,7 @@ public class KafkaProducerService {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public void sendMessage(Map<String, Object> message, String messageType) {
+    public void sendMessage(Object message, String messageType) {
         try {
             if(message == null) {
                 message = new HashMap<>();

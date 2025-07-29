@@ -1,78 +1,31 @@
 package com.ejada.accounts.Services;
 
-import java.util.HashMap;
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.UUID;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import com.ejada.accounts.Models.AccountModel;
-import com.ejada.accounts.Models.AccountStatus;
-import com.ejada.accounts.Models.AccountType;
-import com.ejada.accounts.Repos.AccountRepo;
+import com.ejada.accounts.dto.CreateAccountRequest;
+import com.ejada.accounts.dto.CreateAccountResponse;
+import com.ejada.accounts.dto.TransferRequest;
+import com.ejada.accounts.dto.TransferResponse;
+import com.ejada.accounts.dto.AccountResponse;
+import com.ejada.accounts.dto.AccountListResponse;
 
-@Service
-public class AccountService {
+import jakarta.transaction.Transactional;
 
-    @Autowired
-    private AccountRepo accountRepo;
+public interface AccountService {
+    CreateAccountResponse createAccount(CreateAccountRequest request);
 
-    public AccountModel createAccount(HashMap<String, Object> accountData) {
-        AccountType accountType = AccountType.fromString((String) accountData.get("accountType"));
-        Double initialBalance = (Double) accountData.get("initialBalance");
-        if(initialBalance < 0 || accountType == null) {
-            return null;
-        }
-        AccountModel account = new AccountModel();
-        account.setUserId(UUID.fromString((String)accountData.get("userId")));
-        account.setAccountType(accountType);
-        account.setBalance(initialBalance);
-        return accountRepo.save(account);
-    }
+    AccountResponse getAccount(UUID accountId);
 
-    public AccountModel getAccount(UUID accountId) {
-        return accountRepo.findById(accountId).orElse(null);
-    }
+    AccountListResponse getAllAccounts(UUID userId);
 
-    public List<AccountModel> getAllAccounts(UUID userId) {
-        return accountRepo.findByUserId(userId);
-    }
+    void setInactive(UUID accountId);
 
-    public void getAmount(UUID accountId) {
-        accountRepo.deleteById(accountId);
-    }
+    List<AccountModel> getActiveAccounts();
 
-    public void setInactive(UUID accountId) {
-        AccountModel account = accountRepo.findById(accountId).orElse(null);
-        if (account != null) {
-            account.setStatus(AccountStatus.INACTIVE);
-            accountRepo.save(account);
-        }
-    }
+    @Transactional
+    TransferResponse transferAmount(TransferRequest request);
 
-    public List<AccountModel> getActiveAccounts() {
-        return accountRepo.findByStatus(AccountStatus.ACTIVE);
-    }
-
-    public void updateAmount(UUID fromAccountId,UUID toAccountId, Double amount) {
-        AccountModel toAccount = accountRepo.findById(fromAccountId).orElse(null);
-        AccountModel fromAccount = accountRepo.findById(toAccountId).orElse(null);
-
-        if (toAccount != null && fromAccount != null) {
-            if(fromAccount.getBalance() >= amount && amount > 0) {
-                fromAccount.setBalance(fromAccount.getBalance() - amount);
-                toAccount.setBalance(toAccount.getBalance() + amount);
-                fromAccount.setStatus(AccountStatus.ACTIVE);
-                toAccount.setStatus(AccountStatus.ACTIVE);
-                accountRepo.save(fromAccount);
-                accountRepo.save(toAccount);
-            } else {
-                throw new IllegalArgumentException("insufficient funds in the source account.");
-            }
-        } else {
-            throw new IllegalArgumentException("'to' or 'for' account not found.");
-        }
-    }
-
+    boolean shouldDeactivateAccount(AccountModel account, Timestamp cutoffTime);
 }
