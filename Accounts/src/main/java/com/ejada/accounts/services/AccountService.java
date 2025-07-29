@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 import com.ejada.accounts.Models.AccountModel;
 import com.ejada.accounts.dto.CreateAccountRequest;
+import com.ejada.accounts.dto.CreateAccountResponse;
 import com.ejada.accounts.dto.TransferRequest;
 import com.ejada.accounts.dto.TransferResponse;
 import com.ejada.accounts.dto.AccountResponse;
@@ -13,7 +14,7 @@ import com.ejada.accounts.dto.AccountListResponse;
 import jakarta.transaction.Transactional;
 
 public interface AccountService {
-    AccountResponse createAccount(CreateAccountRequest request);
+    CreateAccountResponse createAccount(CreateAccountRequest request);
 
     AccountResponse getAccount(UUID accountId);
 

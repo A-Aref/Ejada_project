@@ -18,6 +18,7 @@ import com.ejada.accounts.Models.AccountStatus;
 import com.ejada.accounts.Repos.AccountRepo;
 import com.ejada.accounts.Services.AccountService;
 import com.ejada.accounts.dto.CreateAccountRequest;
+import com.ejada.accounts.dto.CreateAccountResponse;
 import com.ejada.accounts.dto.TransferRequest;
 import com.ejada.accounts.dto.TransferResponse;
 import com.ejada.accounts.dto.AccountResponse;
@@ -38,7 +39,7 @@ public class AccountServiceImpl implements AccountService {
     private WebClient webClientTransactions;
 
     @Override
-    public AccountResponse createAccount(CreateAccountRequest request) {
+    public CreateAccountResponse createAccount(CreateAccountRequest request) {
         if (request.getUserId() == null || request.getAccountType() == null) {
             throw new InvalidAccountDataException("User ID and account type are required");
         }
@@ -53,7 +54,7 @@ public class AccountServiceImpl implements AccountService {
         account.setBalance(request.getInitialBalance() != null ? request.getInitialBalance() : 0.00);
         
         AccountModel savedAccount = accountRepo.save(account);
-        return AccountMapper.toAccountResponse(savedAccount);
+        return AccountMapper.toCreateAccountResponse(savedAccount);
     }
 
     @Override
@@ -112,7 +113,7 @@ public class AccountServiceImpl implements AccountService {
         accountRepo.save(toAccount);
 
         return AccountMapper.toTransferResponse(
-            "Transfer successful", 
+            "Account updated successfully.", 
             request.getFromAccountId(), 
             request.getToAccountId(), 
             request.getAmount()

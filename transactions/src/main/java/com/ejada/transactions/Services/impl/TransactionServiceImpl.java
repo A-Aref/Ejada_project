@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -99,10 +100,6 @@ public class TransactionServiceImpl implements TransactionService {
     public TransactionResponse executeTransaction(UUID transactionId) {
         TransactionModel transaction = transactionRepo.findById(transactionId)
             .orElseThrow(() -> new TransactionNotFoundException("Transaction not found with ID: " + transactionId));
-            
-        if (transaction.getStatus() != TransactionStatus.INITIATED) {
-            throw new InvalidTransactionException("Transaction is not in INITIATED status");
-        }
         
         transaction.setStatus(TransactionStatus.SUCCESS);
         TransactionModel savedTransaction = transactionRepo.save(transaction);
@@ -113,10 +110,6 @@ public class TransactionServiceImpl implements TransactionService {
     public TransactionResponse cancelTransaction(UUID transactionId) {
         TransactionModel transaction = transactionRepo.findById(transactionId)
             .orElseThrow(() -> new TransactionNotFoundException("Transaction not found with ID: " + transactionId));
-            
-        if (transaction.getStatus() != TransactionStatus.INITIATED) {
-            throw new InvalidTransactionException("Transaction is not in INITIATED status and cannot be cancelled");
-        }
         
         transaction.setStatus(TransactionStatus.FAILED);
         TransactionModel savedTransaction = transactionRepo.save(transaction);
@@ -134,7 +127,7 @@ public class TransactionServiceImpl implements TransactionService {
         
         // Execute transfer with account service
         try {
-            ResponseEntity<Object> executeTransfer = webClientAccounts.put().uri("/transfer")
+            ResponseEntity<HashMap<String, Object>> executeTransfer = webClientAccounts.put().uri("/transfer")
                     .bodyValue(new HashMap<String, Object>() {
                         {
                             put("fromAccountId", transaction.getFromAccountId());
@@ -142,19 +135,66 @@ public class TransactionServiceImpl implements TransactionService {
                             put("amount", transaction.getAmount());
                         }
                     })
-                    .retrieve().toEntity(Object.class).block();
+                    .retrieve()
+                    .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(), 
+                             clientResponse -> clientResponse.bodyToMono(HashMap.class)
+                                     .map(errorResponse -> {
+                                         // Parse the actual ErrorResponse structure from account service
+                                         String errorMessage = "Transfer failed";
+                                         if (errorResponse != null && errorResponse.containsKey("message")) {
+                                             errorMessage = (String) errorResponse.get("message");
+                                         }
+                                         
+                                         // Map specific account service errors to meaningful transaction errors
+                                         if (errorMessage.contains("Insufficient funds")) {
+                                             return new TransactionExecutionException("Insufficient funds in source account");
+                                         } else if (errorMessage.contains("not found")) {
+                                             return new TransactionExecutionException("One or more accounts not found");
+                                         } else if (errorMessage.contains("Cannot transfer to the same account")) {
+                                             return new TransactionExecutionException("Cannot transfer to the same account");
+                                         } else if (errorMessage.contains("Transfer amount must be positive")) {
+                                             return new TransactionExecutionException("Transfer amount must be positive");
+                                         } else {
+                                             return new TransactionExecutionException("Transfer failed: " + errorMessage);
+                                         }
+                                     }))
+                    .toEntity(new ParameterizedTypeReference<HashMap<String, Object>>() {})
+                    .block();
 
-            if (executeTransfer == null || executeTransfer.getStatusCode().isError()) {
+            if (executeTransfer == null) {
                 // Cancel transaction and throw exception
                 cancelTransaction(transaction.getId());
-                throw new TransactionExecutionException("Transfer failed in account service");
+                throw new TransactionExecutionException("Transfer failed - no response from account service");
             }
+            
+            // Check if response contains success message
+            HashMap<String, Object> responseBody = executeTransfer.getBody();
+            if (responseBody != null && responseBody.containsKey("message")) {
+                String message = (String) responseBody.get("message");
+                if (!message.contains("successful") && !message.contains("Account updated successfully")) {
+                    // Cancel transaction if the response doesn't indicate success
+                    cancelTransaction(transaction.getId());
+                    throw new TransactionExecutionException("Transfer failed: " + message);
+                }
+            }
+            
+        } catch (TransactionExecutionException e) {
+            // Cancel transaction and re-throw
+            cancelTransaction(transaction.getId());
+            throw e;
         } catch (Exception e) {
             // Cancel transaction and re-throw
             cancelTransaction(transaction.getId());
-            throw new TransactionExecutionException("Transfer execution failed: " + e.getMessage());
+            String errorMessage = e.getMessage();
+            if (errorMessage != null && errorMessage.contains("400")) {
+                throw new TransactionExecutionException("Transfer failed due to invalid transfer data or account issues");
+            } else if (errorMessage != null && errorMessage.contains("404")) {
+                throw new TransactionExecutionException("Transfer failed - account not found");
+            } else {
+                throw new TransactionExecutionException("Transfer execution failed: " + (errorMessage != null ? errorMessage : "Unknown error occurred"));
+            }
         }
-        
+
         // Execute transaction (mark as successful)
         return executeTransaction(transaction.getId());
     }

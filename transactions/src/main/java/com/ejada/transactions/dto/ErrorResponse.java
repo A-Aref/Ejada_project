@@ -9,20 +9,17 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ErrorResponse {
     
-    private String message;
+    private int status;
     private String error;
-    private int statusCode;
-    private long timestamp;
+    private String message;
     
     public ErrorResponse(String message) {
         this.message = message;
-        this.timestamp = System.currentTimeMillis();
     }
     
-    public ErrorResponse(String message, String error, int statusCode) {
+    public ErrorResponse(String message, String error, int status) {
         this.message = message;
         this.error = error;
-        this.statusCode = statusCode;
-        this.timestamp = System.currentTimeMillis();
+        this.status = status;
     }
 }

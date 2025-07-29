@@ -3,6 +3,7 @@ package com.ejada.transactions.dto;
 import com.ejada.transactions.Models.TransactionModel;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class TransactionMapper {
@@ -14,11 +15,27 @@ public class TransactionMapper {
         
         return new TransactionResponse(
             transaction.getId(),
-            transaction.getFromAccountId(),
-            transaction.getToAccountId(),
-            transaction.getAmount(),
-            transaction.getDescription(),
             transaction.getStatus(),
+            transaction.getCreatedAt()
+        );
+    }
+    
+    public static AccountTransactionResponse toAccountTransactionResponse(TransactionModel transaction, UUID accountId) {
+        if (transaction == null) {
+            return null;
+        }
+        
+        // Determine if this is a debit or credit for the account
+        Double amount = transaction.getAmount();
+        if (transaction.getFromAccountId().equals(accountId)) {
+            amount = -amount; // Debit (negative amount)
+        }
+        
+        return new AccountTransactionResponse(
+            transaction.getId(),
+            accountId,
+            amount,
+            transaction.getDescription(),
             transaction.getCreatedAt()
         );
     }
@@ -30,6 +47,16 @@ public class TransactionMapper {
         
         return transactions.stream()
                 .map(TransactionMapper::toTransactionResponse)
+                .collect(Collectors.toList());
+    }
+    
+    public static List<AccountTransactionResponse> toAccountTransactionResponseList(List<TransactionModel> transactions, UUID accountId) {
+        if (transactions == null) {
+            return null;
+        }
+        
+        return transactions.stream()
+                .map(transaction -> toAccountTransactionResponse(transaction, accountId))
                 .collect(Collectors.toList());
     }
     

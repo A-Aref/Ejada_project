@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import com.ejada.accounts.Services.AccountService;
 import com.ejada.accounts.Services.KafkaProducerService;
 import com.ejada.accounts.dto.CreateAccountRequest;
+import com.ejada.accounts.dto.CreateAccountResponse;
 import com.ejada.accounts.dto.AccountResponse;
 import com.ejada.accounts.dto.AccountListResponse;
 import com.ejada.accounts.dto.TransferRequest;
@@ -29,11 +30,11 @@ public class AccountController {
     private KafkaProducerService kafkaProducerService;
 
     @PostMapping("/")
-    public ResponseEntity<AccountResponse> createAccount(@Valid @RequestBody CreateAccountRequest request) {
+    public ResponseEntity<CreateAccountResponse> createAccount(@Valid @RequestBody CreateAccountRequest request) {
 
         kafkaProducerService.sendMessage(request, "Request");
 
-        AccountResponse response = accountService.createAccount(request);
+        CreateAccountResponse response = accountService.createAccount(request);
 
         kafkaProducerService.sendMessage(response, "Response");
         

@@ -1,16 +1,14 @@
 package com.ejada.accounts.exception;
 
 import com.ejada.accounts.Services.KafkaProducerService;
+import com.ejada.accounts.dto.ErrorResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
-import java.time.LocalDateTime;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @ControllerAdvice
@@ -20,11 +18,10 @@ public class GlobalExceptionHandler {
     private KafkaProducerService kafkaProducerService;
 
     @ExceptionHandler(AccountNotFoundException.class)
-    public ResponseEntity<Error> handleAccountNotFound(AccountNotFoundException ex) {
-        Error error = new Error(
-            LocalDateTime.now(),
-            String.valueOf(HttpStatus.NOT_FOUND.value()),
-            "Account Not Found",
+    public ResponseEntity<ErrorResponse> handleAccountNotFound(AccountNotFoundException ex) {
+        ErrorResponse error = new ErrorResponse(
+            404,
+            "Not Found",
             ex.getMessage()
         );
         kafkaProducerService.sendMessage(error, "Response");
@@ -32,11 +29,10 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(InsufficientFundsException.class)
-    public ResponseEntity<Error> handleInsufficientFunds(InsufficientFundsException ex) {
-        Error error = new Error(
-            LocalDateTime.now(),
-            String.valueOf(HttpStatus.BAD_REQUEST.value()),
-            "Insufficient Funds",
+    public ResponseEntity<ErrorResponse> handleInsufficientFunds(InsufficientFundsException ex) {
+        ErrorResponse error = new ErrorResponse(
+            400,
+            "Bad Request",
             ex.getMessage()
         );
         kafkaProducerService.sendMessage(error, "Response");
@@ -44,23 +40,21 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(InvalidAccountDataException.class)
-    public ResponseEntity<Error> handleInvalidAccountData(InvalidAccountDataException ex) {
-        Error error = new Error(
-            LocalDateTime.now(),
-            String.valueOf(HttpStatus.BAD_REQUEST.value()),
-            "Invalid Account Data",
-            ex.getMessage()
+    public ResponseEntity<ErrorResponse> handleInvalidAccountData(InvalidAccountDataException ex) {
+        ErrorResponse error = new ErrorResponse(
+            400,
+            "Bad Request",
+            "Invalid account type or initial balance."
         );
         kafkaProducerService.sendMessage(error, "Response");
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(InvalidTransferException.class)
-    public ResponseEntity<Error> handleInvalidTransfer(InvalidTransferException ex) {
-        Error error = new Error(
-            LocalDateTime.now(),
-            String.valueOf(HttpStatus.BAD_REQUEST.value()),
-            "Invalid Transfer",
+    public ResponseEntity<ErrorResponse> handleInvalidTransfer(InvalidTransferException ex) {
+        ErrorResponse error = new ErrorResponse(
+            400,
+            "Bad Request",
             ex.getMessage()
         );
         kafkaProducerService.sendMessage(error, "Response");
@@ -68,32 +62,37 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Error> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        Map<String, String> errors = ex.getBindingResult()
+    public ResponseEntity<ErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        String errors = ex.getBindingResult()
                 .getFieldErrors()
                 .stream()
-                .collect(Collectors.toMap(
-                    FieldError::getField,
-                    FieldError::getDefaultMessage,
-                    (existing, replacement) -> existing
-                ));
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .collect(Collectors.joining(", "));
         
-        Error error = new Error(
-            LocalDateTime.now(),
-            String.valueOf(HttpStatus.BAD_REQUEST.value()),
-            "Validation Failed",
-            "Input validation failed",
-            errors
+        ErrorResponse error = new ErrorResponse(
+            400,
+            "Bad Request",
+            "Invalid account type or initial balance. " + errors
+        );
+        kafkaProducerService.sendMessage(error, "Response");
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
+        ErrorResponse error = new ErrorResponse(
+            400,
+            "Bad Request",
+            ex.getMessage()
         );
         kafkaProducerService.sendMessage(error, "Response");
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Error> handleOtherException(Exception ex) {
-        Error error = new Error(
-            LocalDateTime.now(),
-            String.valueOf(HttpStatus.INTERNAL_SERVER_ERROR.value()),
+    public ResponseEntity<ErrorResponse> handleOtherException(Exception ex) {
+        ErrorResponse error = new ErrorResponse(
+            500,
             "Internal Server Error",
             "An unexpected error occurred: " + ex.getMessage()
         );

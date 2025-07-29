@@ -23,9 +23,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(TransactionNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleTransactionNotFoundException(TransactionNotFoundException ex) {
         ErrorResponse errorResponse = new ErrorResponse(
-            ex.getMessage(),
-            "TRANSACTION_NOT_FOUND",
-            HttpStatus.NOT_FOUND.value()
+            HttpStatus.NOT_FOUND.value(),
+            "Not Found",
+            ex.getMessage()
         );
         
         HashMap<String, Object> kafkaMessage = new HashMap<>();
@@ -39,9 +39,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidTransactionException.class)
     public ResponseEntity<ErrorResponse> handleInvalidTransactionException(InvalidTransactionException ex) {
         ErrorResponse errorResponse = new ErrorResponse(
-            ex.getMessage(),
-            "INVALID_TRANSACTION",
-            HttpStatus.BAD_REQUEST.value()
+            HttpStatus.BAD_REQUEST.value(),
+            "Bad Request",
+            ex.getMessage()
         );
         
         HashMap<String, Object> kafkaMessage = new HashMap<>();
@@ -55,9 +55,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccountServiceException.class)
     public ResponseEntity<ErrorResponse> handleAccountServiceException(AccountServiceException ex) {
         ErrorResponse errorResponse = new ErrorResponse(
-            ex.getMessage(),
-            "ACCOUNT_SERVICE_ERROR",
-            HttpStatus.SERVICE_UNAVAILABLE.value()
+            HttpStatus.BAD_REQUEST.value(),
+            "Bad Request",
+            ex.getMessage()
         );
         
         HashMap<String, Object> kafkaMessage = new HashMap<>();
@@ -65,15 +65,15 @@ public class GlobalExceptionHandler {
         kafkaMessage.put("error", "ACCOUNT_SERVICE_ERROR");
         kafkaProducerService.sendMessage(kafkaMessage, "Response");
         
-        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(errorResponse);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 
     @ExceptionHandler(TransactionExecutionException.class)
     public ResponseEntity<ErrorResponse> handleTransactionExecutionException(TransactionExecutionException ex) {
         ErrorResponse errorResponse = new ErrorResponse(
-            ex.getMessage(),
-            "TRANSACTION_EXECUTION_ERROR",
-            HttpStatus.BAD_REQUEST.value()
+            HttpStatus.BAD_REQUEST.value(),
+            "Bad Request",
+            ex.getMessage()
         );
         
         HashMap<String, Object> kafkaMessage = new HashMap<>();
@@ -94,9 +94,9 @@ public class GlobalExceptionHandler {
         });
 
         ErrorResponse errorResponse = new ErrorResponse(
-            "Validation failed: " + errors.toString(),
-            "VALIDATION_ERROR",
-            HttpStatus.BAD_REQUEST.value()
+            HttpStatus.BAD_REQUEST.value(),
+            "Bad Request",
+            "Validation failed: " + errors.toString()
         );
         
         HashMap<String, Object> kafkaMessage = new HashMap<>();
@@ -112,9 +112,9 @@ public class GlobalExceptionHandler {
         Class<?> requiredType = ex.getRequiredType();
         String typeName = (requiredType != null) ? requiredType.getSimpleName() : "unknown";
         ErrorResponse errorResponse = new ErrorResponse(
-            "Invalid parameter type: " + ex.getName() + " should be of type " + typeName,
-            "TYPE_MISMATCH_ERROR",
-            HttpStatus.BAD_REQUEST.value()
+            HttpStatus.BAD_REQUEST.value(),
+            "Bad Request",
+            "Invalid parameter type: " + ex.getName() + " should be of type " + typeName
         );
         
         HashMap<String, Object> kafkaMessage = new HashMap<>();
@@ -128,9 +128,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
         ErrorResponse errorResponse = new ErrorResponse(
-            "An unexpected error occurred: " + ex.getMessage(),
-            "INTERNAL_SERVER_ERROR",
-            HttpStatus.INTERNAL_SERVER_ERROR.value()
+            HttpStatus.INTERNAL_SERVER_ERROR.value(),
+            "Internal Server Error",
+            "An unexpected error occurred: " + ex.getMessage()
         );
         
         HashMap<String, Object> kafkaMessage = new HashMap<>();
