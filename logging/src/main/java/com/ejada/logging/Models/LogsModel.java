@@ -28,7 +28,7 @@ public class LogsModel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private Long id;
-    @Column(name = "message")
+    @Column(name = "message", columnDefinition = "TEXT")
     @NotNull
     private String message;
     @Column(name = "message_type")
