@@ -1,6 +1,6 @@
 package com.ejada.users.controller;
 
-import com.ejada.users.dto.CredintialsResponse;
+import com.ejada.users.dto.CredentialsResponse;
 import com.ejada.users.dto.LoginRequest;
 import com.ejada.users.dto.RegisterRequest;
 import com.ejada.users.dto.UserResponse;
@@ -25,19 +25,19 @@ public class UserController {
     private KafkaProducerService kafkaProducerService;
 
     @PostMapping("/register")
-    public ResponseEntity<CredintialsResponse> register(@RequestBody RegisterRequest registerRequest) {
+    public ResponseEntity<CredentialsResponse> register(@RequestBody RegisterRequest registerRequest) {
         kafkaProducerService.sendMessage(Map.of("request", registerRequest), "Request");
         UserResponse user = userService.register(registerRequest);
-        CredintialsResponse cr=new CredintialsResponse(user.getUserId(),user.getUsername(),"User registered successfully.");
+        CredentialsResponse cr=new CredentialsResponse(user.getUserId(),user.getUsername(),"User registered successfully.");
         kafkaProducerService.sendMessage(cr, "Response");
         return ResponseEntity.status(HttpStatus.CREATED).body(cr);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<CredintialsResponse> login(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<CredentialsResponse> login(@RequestBody LoginRequest loginRequest) {
         kafkaProducerService.sendMessage(Map.of("request", loginRequest), "Request");
         UserResponse user = userService.login(loginRequest);
-        CredintialsResponse cr=new CredintialsResponse(user.getUserId(),user.getUsername(),"Login successful.");
+        CredentialsResponse cr=new CredentialsResponse(user.getUserId(),user.getUsername(),"Login successful.");
         kafkaProducerService.sendMessage(cr, "Response");
         return ResponseEntity.ok(cr);
     }

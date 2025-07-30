@@ -1,7 +1,7 @@
 package com.ejada.bff.controller;
 
 import com.ejada.bff.dto.DashboardResponse;
-import com.ejada.bff.service.BffService;
+import com.ejada.bff.service.impl.BffServiceImpl;
 import com.ejada.bff.service.KafkaProducerService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,19 +21,19 @@ import java.util.UUID;
 @Tag(name = "BFF", description = "Backend for Frontend API endpoints")
 public class BffController {
 
-    private final BffService bffService;
+    private final BffServiceImpl bffServiceImpl;
 
     @Autowired
     private KafkaProducerService kafkaProducerService;
 
-    public BffController(BffService bffService) {
-        this.bffService = bffService;
+    public BffController(BffServiceImpl bffServiceImpl) {
+        this.bffServiceImpl = bffServiceImpl;
     }
 
     @GetMapping("/dashboard/{userId}")
     public ResponseEntity<DashboardResponse> getUserDashboard(@PathVariable UUID userId) {
         kafkaProducerService.sendMessage(Map.of("userId",userId), "Request");
-        DashboardResponse dashboard = bffService.getDashboard(userId);
+        DashboardResponse dashboard = bffServiceImpl.getDashboard(userId);
         kafkaProducerService.sendMessage(Map.of("response",dashboard), "Response");
         return ResponseEntity.ok(dashboard);
     }

@@ -12,11 +12,11 @@ import java.util.UUID;
 @AllArgsConstructor
 public class Transaction {
     @JsonProperty("transactionId")
-    private UUID id;
+    private UUID transactionId;
     @JsonProperty("accountId")
-    private UUID toAccountId;
+    private UUID accountId;
     private Double amount;
     private String description;
     @JsonProperty("timestamp")
-    private String createdAt;
+    private String timestamp;
 }
