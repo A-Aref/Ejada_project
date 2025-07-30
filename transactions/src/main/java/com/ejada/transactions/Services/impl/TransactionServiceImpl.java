@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
+import com.ejada.transactions.dto.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.ResponseEntity;
@@ -11,11 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.ejada.transactions.Models.TransactionStatus;
-import com.ejada.transactions.dto.TransactionExecutionRequest;
-import com.ejada.transactions.dto.TransactionListResponse;
-import com.ejada.transactions.dto.TransactionMapper;
-import com.ejada.transactions.dto.TransactionRequest;
-import com.ejada.transactions.dto.TransactionResponse;
 import com.ejada.transactions.exception.AccountServiceException;
 import com.ejada.transactions.exception.InvalidTransactionException;
 import com.ejada.transactions.exception.TransactionExecutionException;
@@ -42,6 +38,15 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public TransactionResponse getLatestTransaction(UUID accountId) {
+        try {
+            webClientAccounts.get()
+                    .uri("/{accountId}", accountId)
+                    .retrieve()
+                    .toEntity(Object.class).block();
+        }catch(Exception e){
+            throw new AccountServiceException("Failed to validate account: " + e.getMessage());
+        }
+
         TransactionModel transaction = transactionRepo.findFirstByFromAccountIdOrToAccountIdOrderByCreatedAtDesc(accountId, accountId);
         if (transaction == null) {
             throw new TransactionNotFoundException("No transactions found for account ID: " + accountId);
@@ -50,9 +55,22 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public TransactionListResponse getTransactions(UUID accountId) {
+    public AccountTransactions getTransactions(UUID accountId) {
+        try {
+            webClientAccounts.get()
+                    .uri("/{accountId}", accountId)
+                    .retrieve()
+                    .toEntity(Object.class).block();
+        }catch(Exception e){
+            throw new AccountServiceException("Failed to validate account: " + e.getMessage());
+        }
+
         List<TransactionModel> transactions = transactionRepo.findByFromAccountIdOrToAccountId(accountId, accountId);
-        return TransactionMapper.toTransactionListResponse(transactions);
+        if (transactions == null || transactions.isEmpty()) {
+            throw new TransactionNotFoundException("No transactions found for account ID: " + accountId);
+        }
+
+        return TransactionMapper.toAccountTransactionResponseList(transactions,accountId);
     }
     
     @Override

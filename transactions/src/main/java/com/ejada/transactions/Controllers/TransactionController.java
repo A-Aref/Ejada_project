@@ -3,6 +3,7 @@ package com.ejada.transactions.Controllers;
 import java.util.Map;
 import java.util.UUID;
 
+import com.ejada.transactions.dto.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,10 +12,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.ejada.transactions.Services.KafkaProducerService;
 import com.ejada.transactions.Services.TransactionService;
-import com.ejada.transactions.dto.TransactionExecutionRequest;
-import com.ejada.transactions.dto.TransactionListResponse;
-import com.ejada.transactions.dto.TransactionRequest;
-import com.ejada.transactions.dto.TransactionResponse;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -34,11 +31,11 @@ public class TransactionController {
     private KafkaProducerService kafkaProducerService;
 
     @GetMapping("/accounts/{accountId}")
-    public ResponseEntity<TransactionListResponse> getTransactions(@PathVariable String accountId) {
+    public ResponseEntity<AccountTransactions> getTransactions(@PathVariable String accountId) {
 
         kafkaProducerService.sendMessage(Map.of("accountId", accountId), "Request");
-        
-        TransactionListResponse transactions = transactionService.getTransactions(UUID.fromString(accountId));
+
+        AccountTransactions transactions = transactionService.getTransactions(UUID.fromString(accountId));
         
         kafkaProducerService.sendMessage(transactions, "Response");
         
