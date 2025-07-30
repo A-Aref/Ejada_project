@@ -67,17 +67,35 @@ export default function Account() {
   const fetchDashboardData = async () => {
     try {
       const dashboardData = await api.getDashboard();
+      console.log('Dashboard data received:', dashboardData);
       
-      if (dashboardData.profile) {
-        setUserProfile(dashboardData.profile);
-      }
+      // Set user profile from dashboard response
+      setUserProfile({
+        email: dashboardData.email,
+        firstName: dashboardData.firstName,
+        lastName: dashboardData.lastName
+      });
       
       if (dashboardData.accounts) {
         setAccounts(dashboardData.accounts);
-      }
-      
-      if (dashboardData.transactions) {
-        setTransactions(dashboardData.transactions);
+        
+        // Extract transactions from accounts and organize by accountId
+        const transactionsByAccount: Record<string, Transaction[]> = {};
+        dashboardData.accounts.forEach((account: any) => {
+          if (account.accountTransactions) {
+            // Map the API transaction structure to frontend structure
+            transactionsByAccount[account.accountId] = account.accountTransactions.map((tx: any) => ({
+              transactionId: tx.transactionId,
+              date: tx.timestamp,
+              description: tx.description || 'Transaction',
+              amount: tx.amount,
+              type: tx.amount >= 0 ? 'CREDIT' : 'DEBIT',
+              balance: account.balance // You might need to calculate running balance if available
+            }));
+          }
+        });
+        setTransactions(transactionsByAccount);
+        console.log('Transactions organized by account:', transactionsByAccount);
       }
     } catch (err) {
       console.error("Failed to fetch dashboard data:", err);
