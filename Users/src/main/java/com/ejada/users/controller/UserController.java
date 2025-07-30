@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 
 import java.util.Map;
 
@@ -25,7 +26,7 @@ public class UserController {
     private KafkaProducerService kafkaProducerService;
 
     @PostMapping("/register")
-    public ResponseEntity<CredentialsResponse> register(@RequestBody RegisterRequest registerRequest) {
+    public ResponseEntity<CredentialsResponse> register(@Valid @RequestBody RegisterRequest registerRequest) {
         kafkaProducerService.sendMessage(Map.of("request", registerRequest), "Request");
         UserResponse user = userService.register(registerRequest);
         CredentialsResponse cr=new CredentialsResponse(user.getUserId(),user.getUsername(),"User registered successfully.");
