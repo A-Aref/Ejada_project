@@ -1,4 +1,4 @@
-package com.ejada.users.service;
+package com.ejada.users.service.impl;
 
 import com.ejada.users.dto.LoginRequest;
 import com.ejada.users.dto.RegisterRequest;
@@ -8,6 +8,7 @@ import com.ejada.users.exception.UnauthorizedException;
 import com.ejada.users.exception.UserNotFoundException;
 import com.ejada.users.model.UserModel;
 import com.ejada.users.repository.UserRepository;
+import com.ejada.users.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -15,7 +16,7 @@ import org.springframework.stereotype.Service;
 import java.util.UUID;
 
 @Service
-public class UserServiceImpl implements UserService{
+public class UserServiceImpl implements UserService {
 
     @Autowired
     private UserRepository userRepository;

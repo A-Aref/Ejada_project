@@ -17,6 +17,14 @@ public class WebClientConfig {
         .baseUrl("http://localhost:8083/transactions")
         .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
         .build();
-    } 
+    }
+    @Bean
+    public WebClient webClientUsers()
+    {
+        return WebClient.builder()
+                .baseUrl("http://localhost:8080/users")
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .build();
+    }
 
 }

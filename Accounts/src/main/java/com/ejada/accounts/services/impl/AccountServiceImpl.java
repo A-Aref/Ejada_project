@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
+import com.ejada.accounts.exception.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatusCode;
@@ -24,10 +25,6 @@ import com.ejada.accounts.dto.TransferResponse;
 import com.ejada.accounts.dto.AccountResponse;
 import com.ejada.accounts.dto.AccountListResponse;
 import com.ejada.accounts.dto.AccountMapper;
-import com.ejada.accounts.exception.AccountNotFoundException;
-import com.ejada.accounts.exception.InsufficientFundsException;
-import com.ejada.accounts.exception.InvalidAccountDataException;
-import com.ejada.accounts.exception.InvalidTransferException;
 
 @Service
 public class AccountServiceImpl implements AccountService {
@@ -37,6 +34,8 @@ public class AccountServiceImpl implements AccountService {
 
     @Autowired
     private WebClient webClientTransactions;
+    @Autowired
+    private WebClient webClientUsers;
 
     @Override
     public CreateAccountResponse createAccount(CreateAccountRequest request) {
@@ -66,6 +65,15 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public AccountListResponse getAllAccounts(UUID userId) {
+        try {
+            webClientUsers.get()
+                    .uri("/{userId}/profile", userId)
+                    .retrieve()
+                    .toEntity(Object.class).block();
+        } catch(Exception e){
+            throw new UserNotFoundException("User Not Found: " + e.getMessage());
+        }
+
         List<AccountModel> accounts = accountRepo.findByUserId(userId);
         return AccountMapper.toAccountListResponse(accounts);
     }

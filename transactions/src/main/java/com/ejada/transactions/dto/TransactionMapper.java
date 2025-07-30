@@ -2,6 +2,7 @@ package com.ejada.transactions.dto;
 
 import com.ejada.transactions.Models.TransactionModel;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -33,7 +34,7 @@ public class TransactionMapper {
         
         return new AccountTransactionResponse(
             transaction.getId(),
-            accountId,
+            transaction.getFromAccountId().equals(accountId)?transaction.getToAccountId():transaction.getFromAccountId(),
             amount,
             transaction.getDescription(),
             transaction.getCreatedAt()
@@ -49,17 +50,20 @@ public class TransactionMapper {
                 .map(TransactionMapper::toTransactionResponse)
                 .collect(Collectors.toList());
     }
-    
-    public static List<AccountTransactionResponse> toAccountTransactionResponseList(List<TransactionModel> transactions, UUID accountId) {
+
+    public static AccountTransactions toAccountTransactionResponseList(List<TransactionModel> transactions, UUID accountId) {
         if (transactions == null) {
-            return null;
+            return new AccountTransactions(new ArrayList<>());
         }
-        
-        return transactions.stream()
+
+        List<AccountTransactionResponse> responseList = transactions.stream()
                 .map(transaction -> toAccountTransactionResponse(transaction, accountId))
                 .collect(Collectors.toList());
+
+        return new AccountTransactions(responseList);
     }
-    
+
+
     public static TransactionListResponse toTransactionListResponse(List<TransactionModel> transactions) {
         if (transactions == null) {
             return new TransactionListResponse(null);
